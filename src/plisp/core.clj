@@ -49,19 +49,10 @@
              (assoc-in memory [addr] (first instructions))))))
 
 (defn prog []
-  (let [instructions
-        [
-         (parse-line "  LDI #60")
-         (parse-line "  PHI 3")
-         (parse-line "  LDI #07")
-         (parse-line "  PLO 3")
-         (parse-line "  SEP 3")
-         (parse-line "  LDI #70")
-         (parse-line "  PHI F")
-         (parse-line "  LDI #09")
-         (parse-line "  PLO F")
-         ]]
-    (layout instructions 0x6000)))
+   (with-open [rdr (clojure.java.io/reader "lisp.asm")]
+     (layout
+      (map parse-line (reduce conj [] (line-seq rdr)))
+      0x6000)))
 
 (defn reset
   "Initial state of the processor."
