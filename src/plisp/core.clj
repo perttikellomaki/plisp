@@ -3,7 +3,7 @@
 (defn register-op
   "Parse a register operation."
   [op line]
-  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+([0-9a-fA-F])" "OP" op))]
+  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+([0-9a-fA-F])\\s*" "OP" op))]
     (let [[_ op reg] (re-matches re line)]
       (if op
         {:op (keyword op) :n (read-string (str "0x" reg)) :bytes 1}))))
@@ -11,15 +11,23 @@
 (defn immediate-op
   "Parse an immediate operation."
   [op line]
-  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+#([0-9a-fA-F][0-9a-fA-F])" "OP" op))]
+  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+#([0-9a-fA-F][0-9a-fA-F])\\s*" "OP" op))]
     (let [[_ op operand] (re-matches re line)]
       (if op
         {:op (keyword op) :immediate (read-string (str "0x" operand)) :bytes 2}))))
+
+(defn address-directive
+  "Parse an address directive."
+  [line]
+  (let [[_ address] (re-matches #"\s*([0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]):\s*" line)]
+    (if address
+      {:op :address :address (read-string (str "0x" address))})))
 
 (defn parse-line
   "Parse a single line of assembly."
   [line]
   (or
+   (address-directive line)
    (register-op "LDN" line)       ; 0N
    (register-op "INC" line)       ; 1N
    (register-op "DEC" line)       ; 2N
@@ -38,21 +46,27 @@
    (immediate-op "LDI" line)      ; F8
    ))
 
-(defn layout [instructions start-address]
-  (loop [addr start-address
+(defn layout [instructions]
+  (loop [addr 0
          instructions instructions
          memory {}]
     (if (empty? instructions)
       memory
-      (recur (+ addr (:bytes (first instructions)))
-             (rest instructions)
-             (assoc-in memory [addr] (first instructions))))))
+      (let [[insn & insns] instructions
+            op (:op insn)]
+        (cond (= op :address)
+              (recur (:address insn)
+                     insns
+                     memory)
+              :else
+              (recur (+ addr (:bytes insn))
+                     insns
+                     (assoc-in memory [addr] insn)))))))
 
 (defn prog []
    (with-open [rdr (clojure.java.io/reader "lisp.asm")]
      (layout
-      (map parse-line (reduce conj [] (line-seq rdr)))
-      0x6000)))
+      (map parse-line (reduce conj [] (line-seq rdr))))))
 
 (defn reset
   "Initial state of the processor."
