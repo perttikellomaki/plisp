@@ -75,8 +75,7 @@
    :P 0x0
    :X 0x0
    :R [0X6000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000]
-   :mem {}
-   :prog prog
+   :mem prog
    })
 
 
@@ -90,7 +89,7 @@
 
 (defn instruction-fetch [processor]
   (let [pc (get-in processor [:R (:P processor)])
-        instruction (get-in processor [:prog pc])]
+        instruction (get-in processor [:mem pc])]
     [instruction
      (when instruction
        (assoc-in processor
