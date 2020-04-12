@@ -140,11 +140,16 @@
       (letfn
           [(P [] (:P processor))
            (D [] (:D processor))
+           (mem [addr] (get-in processor [:mem addr]))
            (R [n] (get-in processor [:R n]))
            ]
         (let [n (:n instruction)
               immediate (:immediate instruction)
               effect (case (:op instruction)
+                       :LDA [[:D]
+                             (fn [] (mem (R n)))
+                             [:R n]
+                             (fn [] (+ (R n) 1))]
                        :PLO [[:R n]
                              (fn [] (replace-lo (R n) (D)))]
                        :PHI [[:R n]
