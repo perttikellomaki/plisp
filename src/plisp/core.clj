@@ -23,11 +23,19 @@
     (if address
       {:op :address :address (read-string (str "0x" address))})))
 
+(defn byte-directive
+  "Parse a byte directive."
+  [line]
+  (let [[_ byte] (re-matches #"\s*BYTE\s+#([0-9a-fA-F][0-9a-fA-F])\s*" line)]
+    (if byte
+      {:op :byte :value (read-string (str "0x" byte)) :bytes 1})))
+
 (defn parse-line
   "Parse a single line of assembly."
   [line]
   (or
    (address-directive line)
+   (byte-directive line)
    (register-op "LDN" line)       ; 0N
    (register-op "INC" line)       ; 1N
    (register-op "DEC" line)       ; 2N
@@ -58,6 +66,10 @@
               (recur (:address insn)
                      insns
                      memory)
+              (= op :byte)
+              (recur (+ addr 1)
+                     insns
+                     (assoc-in memory [addr] (:value insn)))
               :else
               (recur (+ addr (:bytes insn))
                      insns
