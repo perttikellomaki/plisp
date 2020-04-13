@@ -47,10 +47,10 @@
    (register-op "LDN" line)       ; 0N
    (register-op "INC" line)       ; 1N
    (register-op "DEC" line)       ; 2N
-   
+
    (register-op "LDA" line)       ; 4N
    (register-op "STR" line)       ; 5N
-   
+
    (register-op "GLO" line)       ; 8N
    (register-op "GHI" line)       ; 9N
    (register-op "PLO" line)       ; AN
@@ -144,7 +144,7 @@
                    (+ 4 n) (get-in processor [:R (+ 4 n)])
                    (+ 8 n) (get-in processor [:R (+ 8 n)])
                    (+ 12 n) (get-in processor [:R (+ 12 n)])))))
-                             
+
 (defn next-state [processor]
   (let [[instruction processor] (instruction-fetch processor)]
     (dump-instruction instruction)
