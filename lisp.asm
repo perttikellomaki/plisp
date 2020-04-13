@@ -33,4 +33,8 @@
         PHI 9                   ; (this was apparently never implemented)
         LDI #00
         PLO 9
-        
+
+        RLDI E #6032            ; RE OS. I/O ADDRS
+        LDI #01                 ; RF OS. I/O HOOKS
+        PLO F
+
