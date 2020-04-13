@@ -16,6 +16,14 @@
       (if op
         {:op (keyword op) :immediate (read-string (str "0x" operand)) :bytes 2}))))
 
+(defn register-immediate-op
+  "Parse a register immediate operation."
+  [op line]
+  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+([0-9a-fA-F])\\s+#([0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])\\s*(;.*)*" "OP" op))]
+    (let [[_ op reg operand] (re-matches re line)]
+      (if op
+        {:op (keyword op) :n  (read-string (str "0x" reg)) :long-immediate (read-string (str "0x" operand)) :bytes 4}))))
+
 (defn address-directive
   "Parse an address directive."
   [line]
@@ -44,22 +52,23 @@
    (address-directive line)
    (byte-directive line)
    (empty-line line)
-   (register-op "LDN" line)       ; 0N
-   (register-op "INC" line)       ; 1N
-   (register-op "DEC" line)       ; 2N
+   (register-op "LDN" line)       	; 0N
+   (register-op "INC" line)       	; 1N
+   (register-op "DEC" line)       	; 2N
 
-   (register-op "LDA" line)       ; 4N
-   (register-op "STR" line)       ; 5N
+   (register-op "LDA" line)       	; 4N
+   (register-op "STR" line)       	; 5N
 
-   (register-op "GLO" line)       ; 8N
-   (register-op "GHI" line)       ; 9N
-   (register-op "PLO" line)       ; AN
-   (register-op "PHI" line)       ; BN
+   (register-op "GLO" line)       	; 8N
+   (register-op "GHI" line)       	; 9N
+   (register-op "PLO" line)       	; AN
+   (register-op "PHI" line)       	; BN
 
-   (register-op "SEP" line)       ; DN
-   (register-op "SEX" line)       ; EN
+   (register-op "SEP" line)       	; DN
+   (register-op "SEX" line)       	; EN
 
-   (immediate-op "LDI" line)      ; F8
+   (immediate-op "LDI" line)      	; F8
+   (register-immediate-op "RLDI" line)
    ))
 
 (defn layout [instructions]
@@ -130,6 +139,7 @@
   (print (:op instruction))
   (when (:n instruction) (print (format " %x" (:n instruction))))
   (when (:immediate instruction) (print (format " #%02x" (:immediate instruction))))
+  (when (:long-immediate instruction) (print (format " #%04x" (:long-immediate instruction))))
   (newline))
 
 
@@ -157,6 +167,7 @@
            ]
         (let [n (:n instruction)
               immediate (:immediate instruction)
+              long-immediate (:long-immediate instruction)
               effect (case (:op instruction)
                        :LDA [[:D]
                              (fn [] (mem (R n)))
@@ -170,6 +181,8 @@
                              (fn [] n)]
                        :LDI [[:D]
                              (fn [] immediate)]
+                       :RLDI [[:R n]
+                             (fn [] long-immediate)]
                        )
               final-state (when effect (interpret processor effect))]
           (when final-state (dump-processor final-state))
