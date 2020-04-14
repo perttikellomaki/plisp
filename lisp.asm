@@ -55,8 +55,13 @@
         PLO 7
 
 6017:
+;;; I was fortunate enough to have a RCA 1805 processor with an extended
+;;; instruction set. The Lisp interpreter is written using the extended
+;;; instructions, but my intention was to provide subroutines in 1802
+;;; assembly that would implement the 1805 instructions. That support
+;;; never materialized, however.
         LDI #00                 ; R9 = MACRO PC FOR 1802
-        PHI 9                   ; (this was apparently never implemented)
+        PHI 9
         LDI #00
         PLO 9
 
@@ -88,4 +93,20 @@
         BYTE #00
 
 6038:
+        SEX 2                   ; CURRENT PROG=00
+        LDI #22
+        PLO f
+        LDI #00
+        STR F
+        INC F
+        STR F
         
+;;; Original code has a call to I/O init. Replaced here with NOPs.
+        ;; SCAL 4 E72F    ; I/O INIT
+        NOP
+        NOP
+        NOP
+        NOP
+
+        RLDI 5 #65F3            ; R5 = ML-FN CALL
+
