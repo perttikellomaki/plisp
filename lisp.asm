@@ -110,3 +110,6 @@
 
         RLDI 5 #65F3            ; R5 = ML-FN CALL
 
+6049:
+        SCAL 4 60D1             ; PROMPT
+        
