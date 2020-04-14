@@ -129,6 +129,15 @@
                  [:R (:P processor)]
                  (+ pc (:bytes instruction))))]))
 
+(defn inc-16bit [value]
+  (bit-and 0xffff (+ value 1)))
+
+(defn get-lo [value]
+  (bit-and value 0xff))
+
+(defn get-hi [value]
+  (quot (bit-and value 0xff00) 0x100))
+
 (defn replace-lo [value byte]
   (bit-or (bit-and value 0xff00) byte))
 
@@ -169,10 +178,18 @@
               immediate (:immediate instruction)
               long-immediate (:long-immediate instruction)
               effect (case (:op instruction)
+                       :INC [[:R n]
+                             (fn [] (inc-16bit (R n)))]
                        :LDA [[:D]
                              (fn [] (mem (R n)))
                              [:R n]
-                             (fn [] (+ (R n) 1))]
+                             (fn [] (inc-16bit (R n)))]
+                       :STR [[:mem (R n)]
+                             (fn [] (D))]
+                       :GLO [[:D]
+                             (fn [] (get-lo (R n)))]
+                       :GHI [[:D]
+                             (fn [] (get-hi (R n)))]
                        :PLO [[:R n]
                              (fn [] (replace-lo (R n) (D)))]
                        :PHI [[:R n]
