@@ -24,6 +24,14 @@
       (if op
         {:op (keyword op) :n  (read-string (str "0x" reg)) :long-immediate (read-string (str "0x" operand)) :bytes 4}))))
 
+(defn short-branch-op
+  "Parse a short branch operation."
+  [op line]
+  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+([0-9a-fA-F][0-9a-fA-F])\\s*(;.*)*" "OP" op))]
+    (let [[_ op address] (re-matches re line)]
+      (if op
+        {:op (keyword op) :page-address (read-string (str "0x" address)) :bytes 2}))))
+
 (defn address-directive
   "Parse an address directive."
   [line]
@@ -55,6 +63,8 @@
    (register-op "LDN" line)
    (register-op "INC" line)
    (register-op "DEC" line)
+   (short-branch-op "BR" line)
+   (short-branch-op "BNZ" line)
    (register-op "LDA" line)
    (register-op "STR" line)
    (register-op "GLO" line)
@@ -141,6 +151,11 @@
 (defn replace-hi [value byte]
   (bit-or (bit-and value 0x00ff) (* 0x100 byte)))
 
+(defn short-branch [page-address condition pc]
+  (if condition
+    (replace-lo pc page-address)
+    pc))
+
 (defn dump-instruction [instruction]
   (print (:op instruction))
   (when (:n instruction) (print (format " %x" (:n instruction))))
@@ -174,9 +189,14 @@
         (let [n (:n instruction)
               immediate (:immediate instruction)
               long-immediate (:long-immediate instruction)
+              page-address (:page-address instruction)
               effect (case (:op instruction)
                        :INC [[:R n]
                              (fn [] (inc-16bit (R n)))]
+                       :BR  [[:R (P)]
+                             (fn [] (short-branch page-address true (R (P))))]
+                       :BNZ [[:R (P)]
+                             (fn [] (short-branch page-address (not= (D) 0) (R (P))))]
                        :LDA [[:D]
                              (fn [] (mem (R n)))
                              [:R n]
