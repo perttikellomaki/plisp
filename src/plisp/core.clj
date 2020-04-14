@@ -200,7 +200,12 @@
       (letfn
           [(P [] (:P processor))
            (D [] (:D processor))
-           (mem [addr] (get-in processor [:mem addr]))
+           (mem [addr]
+             (print (format "%04x: %02x"
+                            addr
+                            (get-in processor [:mem addr])))
+             (newline)
+             (get-in processor [:mem addr]))
            (R [n] (get-in processor [:R n]))
            ]
         (let [n (:n instruction)
