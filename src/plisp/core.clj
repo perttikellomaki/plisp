@@ -135,7 +135,7 @@
     (if (empty? effects)
       partial
       (let [[target produce-value & rest] effects
-            partial (assoc-in processor target (produce-value))]
+            partial (assoc-in partial target (produce-value))]
         (recur rest partial)))))
 
 (defn instruction-fetch [processor]
