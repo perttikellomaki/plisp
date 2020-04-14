@@ -1,4 +1,5 @@
 (ns plisp.core)
+(use 'clojure.data)
 
 (defn register-op
   "Parse a register operation."
@@ -165,7 +166,7 @@
   (newline))
 
 
-(defn dump-processor [processor]
+(defn dump-processor [previous processor]
   (print (format "D: %02x  P: %x  X: %x\n"
                  (:D processor)
                  (:P processor)
@@ -175,7 +176,12 @@
                    n (get-in processor [:R n])
                    (+ 4 n) (get-in processor [:R (+ 4 n)])
                    (+ 8 n) (get-in processor [:R (+ 8 n)])
-                   (+ 12 n) (get-in processor [:R (+ 12 n)])))))
+                   (+ 12 n) (get-in processor [:R (+ 12 n)]))))
+  (let [[_ changes _]  (diff previous processor)]
+    (when (:mem changes)
+      (doseq [[addr val] (:mem changes)]
+        (print (format "mem %04x: %02x\n" addr val))))))
+
 
 (defn next-state [processor]
   (let [[instruction processor] (instruction-fetch processor)]
@@ -222,12 +228,12 @@
                              (fn [] long-immediate)]
                        )
               final-state (when effect (interpret processor effect))]
-          (when final-state (dump-processor final-state))
+          (when final-state (dump-processor processor final-state))
           final-state)))))
 
 (defn run []
   (let [processor (reset (prog))]
-    (dump-processor processor)
+    (dump-processor processor processor)
     (loop [processor processor]
       (let [next (next-state processor)]
         (when next (recur next))))))
