@@ -31,7 +31,15 @@
   (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+([0-9a-fA-F])\\s+#([0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])\\s*(;.*)*" "OP" op))]
     (let [[_ op reg operand] (re-matches re line)]
       (if op
-        {:op (keyword op) :n  (read-string (str "0x" reg)) :long-immediate (read-string (str "0x" operand)) :bytes 4}))))
+        {:op (keyword op) :n (read-string (str "0x" reg)) :long-immediate (read-string (str "0x" operand)) :bytes 4}))))
+
+(defn subroutine-call-op
+  "Parse a subroutine call instruction."
+  [op line]
+  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+([0-9a-fA-F])\\s+([0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])\\s*(;.*)*" "OP" op))
+        [_ op reg address] (re-matches re line)]
+    (if op
+      {:op (keyword op) :n (read-string (str "0x" reg)) :long-address (read-string (str "0x" address)) :bytes 4})))
 
 (defn short-branch-op
   "Parse a short branch operation."
@@ -86,6 +94,7 @@
    (immediate-op "LDI" line)
    (immediate-op "XRI" line)
    (register-immediate-op "RLDI" line)
+   (subroutine-call-op "SCAL" line)
    ))
 
 (defn layout [instructions]
@@ -150,6 +159,9 @@
 (defn inc-16bit [value]
   (bit-and 0xffff (+ value 1)))
 
+(defn dec-16bit [value]
+  (bit-and 0xffff (- value 1)))
+
 (defn get-lo [value]
   (bit-and value 0xff))
 
@@ -173,6 +185,7 @@
   (when (:immediate instruction) (print (format " #%02x" (:immediate instruction))))
   (when (:long-immediate instruction) (print (format " #%04x" (:long-immediate instruction))))
   (when (:page-address instruction) (print (format " %02x" (:page-address instruction))))
+  (when (:long-address instruction) (print (format " %04x" (:long-address instruction))))
   (newline))
 
 
@@ -199,6 +212,7 @@
     (when instruction
       (letfn
           [(P [] (:P processor))
+           (X [] (:X processor))
            (D [] (:D processor))
            (mem [addr]
              (print (format "%04x: %02x"
@@ -212,6 +226,7 @@
               immediate (:immediate instruction)
               long-immediate (:long-immediate instruction)
               page-address (:page-address instruction)
+              long-address (:long-address instruction)
               effect (case (:op instruction)
                        :NOP []
                        :INC [[:R n]
@@ -243,7 +258,17 @@
                        :XRI [[:D]
                              (fn [] (bit-xor (D) immediate))]
                        :RLDI [[:R n]
-                             (fn [] long-immediate)]
+                              (fn [] long-immediate)]
+                       :SCAL [[:mem (R (X))]
+                              (fn [] (get-lo (R n)))
+                              [:mem (dec-16bit (R (X)))]
+                              (fn [] (get-hi (R n)))
+                              [:R (X)]
+                              (fn [] (dec-16bit (dec-16bit (R (X)))))
+                              [:R n]
+                              (fn [] (R (P)))
+                              [:R (P)]
+                              (fn [] long-address)]
                        )
               final-state (when effect (interpret processor effect))]
           (when final-state (dump-processor processor final-state))
