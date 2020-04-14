@@ -161,6 +161,7 @@
   (when (:n instruction) (print (format " %x" (:n instruction))))
   (when (:immediate instruction) (print (format " #%02x" (:immediate instruction))))
   (when (:long-immediate instruction) (print (format " #%04x" (:long-immediate instruction))))
+  (when (:page-address instruction) (print (format " %02x" (:page-address instruction))))
   (newline))
 
 
