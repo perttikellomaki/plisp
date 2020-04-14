@@ -52,22 +52,19 @@
    (address-directive line)
    (byte-directive line)
    (empty-line line)
-   (register-op "LDN" line)       	; 0N
-   (register-op "INC" line)       	; 1N
-   (register-op "DEC" line)       	; 2N
-
-   (register-op "LDA" line)       	; 4N
-   (register-op "STR" line)       	; 5N
-
-   (register-op "GLO" line)       	; 8N
-   (register-op "GHI" line)       	; 9N
-   (register-op "PLO" line)       	; AN
-   (register-op "PHI" line)       	; BN
-
-   (register-op "SEP" line)       	; DN
-   (register-op "SEX" line)       	; EN
-
-   (immediate-op "LDI" line)      	; F8
+   (register-op "LDN" line)
+   (register-op "INC" line)
+   (register-op "DEC" line)
+   (register-op "LDA" line)
+   (register-op "STR" line)
+   (register-op "GLO" line)
+   (register-op "GHI" line)
+   (register-op "PLO" line)
+   (register-op "PHI" line)
+   (register-op "SEP" line)
+   (register-op "SEX" line)
+   (immediate-op "LDI" line)
+   (immediate-op "XRI" line)
    (register-immediate-op "RLDI" line)
    ))
 
@@ -198,6 +195,8 @@
                              (fn [] n)]
                        :LDI [[:D]
                              (fn [] immediate)]
+                       :XRI [[:D]
+                             (fn [] (bit-xor (D) immediate))]
                        :RLDI [[:R n]
                              (fn [] long-immediate)]
                        )
