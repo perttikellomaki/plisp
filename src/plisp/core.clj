@@ -220,6 +220,8 @@
                              (fn [] (replace-hi (R n) (D)))]
                        :SEP [[:P]
                              (fn [] n)]
+                       :SEX [[:X]
+                             (fn [] n)]
                        :LDI [[:D]
                              (fn [] immediate)]
                        :XRI [[:D]
