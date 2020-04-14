@@ -1,6 +1,14 @@
 (ns plisp.core)
 (use 'clojure.data)
 
+(defn no-operand-op
+  "Parse a single byte operation with no register part."
+  [op line]
+  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s*(;.*)*" "OP" op))]
+    (let [[_ op] (re-matches re line)]
+      (if op
+        {:op (keyword op) :bytes 1}))))
+
 (defn register-op
   "Parse a register operation."
   [op line]
@@ -61,6 +69,7 @@
    (address-directive line)
    (byte-directive line)
    (empty-line line)
+   (no-operand-op "NOP" line)
    (register-op "LDN" line)
    (register-op "INC" line)
    (register-op "DEC" line)
@@ -121,11 +130,12 @@
 
 
 (defn interpret [processor effects]
-  (loop [[target produce-value & rest] effects
-         processor processor]
-    (let [partial (assoc-in processor target (produce-value))]
-      (if (empty? rest)
-        partial
+  (loop [effects effects
+         partial processor]
+    (if (empty? effects)
+      partial
+      (let [[target produce-value & rest] effects
+            partial (assoc-in processor target (produce-value))]
         (recur rest partial)))))
 
 (defn instruction-fetch [processor]
@@ -198,6 +208,7 @@
               long-immediate (:long-immediate instruction)
               page-address (:page-address instruction)
               effect (case (:op instruction)
+                       :NOP []
                        :INC [[:R n]
                              (fn [] (inc-16bit (R n)))]
                        :BR  [[:R (P)]
