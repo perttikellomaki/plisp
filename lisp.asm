@@ -38,3 +38,12 @@
         LDI #01                 ; RF OS. I/O HOOKS
         PLO F
 
+        LDA E
+        STR F
+        INC F
+        LDA E
+        STR F
+        INC F
+        INC F
+        GLO F
+        
