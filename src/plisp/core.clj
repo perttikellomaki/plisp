@@ -128,14 +128,15 @@
       (map parse-line (reduce conj [] (line-seq rdr))))))
 
 (defn reset
-  "Initial state of the processor."
-  [prog]
-  {:D 0x00
-   :P 0x0
-   :X 0x0
-   :R [0X6000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000]
-   :mem prog
-   })
+  "Initial state of the processor. Optionally with starting address in R0."
+  ([prog] (reset prog 0x0000))
+  ([prog start-addr]
+   {:D 0x00
+    :P 0x0
+    :X 0x0
+    :R [start-addr 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000]
+    :mem prog
+    }))
 
 
 (defn interpret [processor effects]
@@ -275,7 +276,7 @@
           final-state)))))
 
 (defn run []
-  (let [processor (reset (prog))]
+  (let [processor (reset (prog) 0x6000)]
     (dump-processor processor processor)
     (loop [processor processor]
       (let [next (next-state processor)]
