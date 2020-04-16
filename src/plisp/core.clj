@@ -229,6 +229,14 @@
       (doseq [[addr val] (:mem changes)]
         (print (format "mem %04x: %02x\n" addr val))))))
 
+(defn dump-address [addr-val]
+  (let [[addr val] addr-val]
+    (if (int? val)
+      (format "%04x: %02x %s" addr val (char val))
+      (format "%04x: %s" addr val))))
+
+(defn lst [memory]
+  (map dump-address (sort memory)))
 
 (defn next-state [processor]
   (let [[instruction processor] (instruction-fetch processor)]
