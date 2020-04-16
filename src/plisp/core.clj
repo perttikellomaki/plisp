@@ -71,6 +71,13 @@
     (if byte
       {:op :byte :value (read-string (str "0x" byte)) :bytes 1})))
 
+(defn string-directive
+  "Parse a string directive."
+  [line]
+  (let [[_ str] (re-matches #"\s*STRING\s+\"([^\"]*)\"\s*(;.*)*" line)]
+    (if str
+      {:op :string :value str :bytes (count str)})))
+
 (defn empty-line
   "Parse a comment line."
   [line]
@@ -84,6 +91,7 @@
   (or
    (address-directive line)
    (byte-directive line)
+   (string-directive line)
    (empty-line line)
    (no-operand-op "NOP" line)
    (register-op "LDN" line)
@@ -122,6 +130,12 @@
               (recur (+ addr 1)
                      insns
                      (assoc-in memory [addr] (:value insn)))
+              (= op :string)
+              (recur addr
+                     (concat (map (fn [c] {:op :byte :value (int c)})
+                                  (:value insn))
+                             insns)
+                     memory)
               (= op :empty)
               (recur addr
                      insns
