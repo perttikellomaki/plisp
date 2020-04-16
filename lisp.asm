@@ -113,3 +113,11 @@
 6049:
         SCAL 4 60D1             ; PROMPT
         
+        STRING " P-LISP FOR 1805 vers 1.0 210884"
+        BYTE #0d
+        BYTE #0a
+        STRING " C 1984 PERTTI KELLOMÄKI      "
+        BYTE #0d
+        BYTE #0a
+        BYTE #00
+
