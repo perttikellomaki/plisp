@@ -170,3 +170,30 @@
     (is (= {:R [4 0x1234]}
            changes))))
 
+(deftest test-scal-sret
+  (let [changes
+        (run-prog
+         ["  RLDI 2 #ffff"
+          "  SEX 2"
+          "  SCAL 1 0100"
+          "  BYTE #03"
+          "  RLDI 5 #0550"
+          "0100:"
+          "  LDA 1   ; should pick up the #03 at call site"
+          "  PHI 3"
+          "  SCAL 1 0200"
+          "  LDI #30"
+          "  PLO 3"
+          "  SRET 1"
+          "0200:"
+          "  RLDI 4 #0440"
+          "  SRET 1"]
+         12)]
+    (is (= {:R [14 nil 0xffff 0x0330 0x0440 0x0550]
+            :D 0x30
+            :X 2
+            :mem {0xfffc 0x00
+                  0xfffd 0x0a
+                  0xfffe 0x00
+                  0xffff 0x00}}
+           changes))))

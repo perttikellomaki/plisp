@@ -41,6 +41,14 @@
     (if op
       {:op (keyword op) :n (read-string (str "0x" reg)) :long-address (read-string (str "0x" address)) :bytes 4})))
 
+(defn subroutine-return-op
+  "Parse a subroutine call instruction."
+  [op line]
+  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+([0-9a-fA-F])\\s*(;.*)*" "OP" op))
+        [_ op reg] (re-matches re line)]
+    (if op
+      {:op (keyword op) :n (read-string (str "0x" reg)) :bytes 2})))
+
 (defn short-branch-op
   "Parse a short branch operation."
   [op line]
@@ -95,6 +103,7 @@
    (immediate-op "XRI" line)
    (register-immediate-op "RLDI" line)
    (subroutine-call-op "SCAL" line)
+   (subroutine-return-op "SRET" line)
    ))
 
 (defn layout [instructions]
@@ -270,6 +279,13 @@
                               (fn [] (R (P)))
                               [:R (P)]
                               (fn [] long-address)]
+                       :SRET [[:R (P)]
+                              (fn [] (R n))
+                              [:R n]
+                              (fn [] (+ (* (mem (inc-16bit (R (X)))) 0x100)
+                                        (mem (inc-16bit (inc-16bit (R (X)))))))
+                              [:R (X)]
+                              (fn [] (inc-16bit (inc-16bit (R (X)))))]
                        )
               final-state (when effect (interpret processor effect))]
           (when final-state (dump-processor processor final-state))
