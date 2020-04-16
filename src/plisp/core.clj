@@ -126,10 +126,6 @@
               (recur (:address insn)
                      insns
                      memory)
-              (= op :byte)
-              (recur (+ addr 1)
-                     insns
-                     (assoc-in memory [addr] (:value insn)))
               (= op :string)
               (recur addr
                      (concat (map (fn [c] {:op :byte :value (int c)})
@@ -180,6 +176,8 @@
                  [:R (:P processor)]
                  (+ pc (:bytes instruction))))]))
 
+(defn byte [val] {:op :byte :value val})
+
 (defn inc-16bit [value]
   (bit-and 0xffff (+ value 1)))
 
@@ -227,7 +225,7 @@
   (let [[_ changes _]  (diff previous processor)]
     (when (:mem changes)
       (doseq [[addr val] (:mem changes)]
-        (print (format "mem %04x: %02x\n" addr val))))))
+        (print (format "mem %04x: %02x\n" addr (:value val)))))))
 
 (defn dump-address [addr-val]
   (let [[addr val] addr-val]
@@ -249,9 +247,9 @@
            (mem [addr]
              (print (format "%04x: %02x"
                             addr
-                            (get-in processor [:mem addr])))
+                            (:value (get-in processor [:mem addr]))))
              (newline)
-             (get-in processor [:mem addr]))
+             (:value (get-in processor [:mem addr])))
            (R [n] (get-in processor [:R n]))
            ]
         (let [n (:n instruction)
@@ -272,7 +270,7 @@
                              [:R n]
                              (fn [] (inc-16bit (R n)))]
                        :STR [[:mem (R n)]
-                             (fn [] (D))]
+                             (fn [] (byte (D)))]
                        :GLO [[:D]
                              (fn [] (get-lo (R n)))]
                        :GHI [[:D]
@@ -292,9 +290,9 @@
                        :RLDI [[:R n]
                               (fn [] long-immediate)]
                        :SCAL [[:mem (R (X))]
-                              (fn [] (get-lo (R n)))
+                              (fn [] (byte (get-lo (R n))))
                               [:mem (dec-16bit (R (X)))]
-                              (fn [] (get-hi (R n)))
+                              (fn [] (byte (get-hi (R n))))
                               [:R (X)]
                               (fn [] (dec-16bit (dec-16bit (R (X)))))
                               [:R n]

@@ -104,7 +104,7 @@
           "  STR 1"])]
     (is (= {:D 0x12
             :R [7 0xffff]
-            :mem {0xffff 0x12}}
+            :mem {0xffff (mem-byte 0x12)}}
            changes))))
 
 (deftest test-plo-glo
@@ -192,8 +192,8 @@
     (is (= {:R [14 nil 0xffff 0x0330 0x0440 0x0550]
             :D 0x30
             :X 2
-            :mem {0xfffc 0x00
-                  0xfffd 0x0a
-                  0xfffe 0x00
-                  0xffff 0x00}}
+            :mem {0xfffc (mem-byte 0x00)
+                  0xfffd (mem-byte 0x0a)
+                  0xfffe (mem-byte 0x00)
+                  0xffff (mem-byte 0x00)}}
            changes))))
