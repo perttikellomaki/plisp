@@ -57,6 +57,14 @@
       (if op
         {:op (keyword op) :page-address (read-string (str "0x" address)) :bytes 2}))))
 
+(defn long-branch-op
+  "Parse a long branch operation."
+  [op line]
+  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+([0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])\\s*(;.*)*" "OP" op))]
+    (let [[_ op address] (re-matches re line)]
+      (if op
+        {:op (keyword op) :long-address (read-string (str "0x" address)) :bytes 3}))))
+
 (defn address-directive
   "Parse an address directive."
   [line]
@@ -98,7 +106,9 @@
    (register-op "INC" line)
    (register-op "DEC" line)
    (short-branch-op "BR" line)
+   (short-branch-op "BZ" line)
    (short-branch-op "BNZ" line)
+   (long-branch-op "LBR" line)
    (register-op "LDA" line)
    (register-op "STR" line)
    (register-op "GLO" line)
@@ -108,10 +118,15 @@
    (register-op "SEP" line)
    (register-op "SEX" line)
    (immediate-op "LDI" line)
+   (immediate-op "ADI" line)
+   (immediate-op "SMI" line)
    (immediate-op "XRI" line)
    (register-immediate-op "RLDI" line)
    (subroutine-call-op "SCAL" line)
    (subroutine-return-op "SRET" line)
+
+   ;; pseudo ops
+   (no-operand-op "PRINTCHAR" line)
    ))
 
 (defn layout [instructions]
@@ -128,7 +143,7 @@
                      memory)
               (= op :string)
               (recur addr
-                     (concat (map (fn [c] {:op :byte :value (int c)})
+                     (concat (map (fn [c] {:op :byte :value (int c) :bytes 1})
                                   (:value insn))
                              insns)
                      memory)
@@ -151,6 +166,7 @@
   ([prog] (reset prog 0x0000))
   ([prog start-addr]
    {:D 0x00
+    :DF 0
     :P 0x0
     :X 0x0
     :R [start-addr 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000]
@@ -176,7 +192,7 @@
                  [:R (:P processor)]
                  (+ pc (:bytes instruction))))]))
 
-(defn byte [val] {:op :byte :value val})
+(defn mem-byte [val] {:op :byte :value val})
 
 (defn inc-16bit [value]
   (bit-and 0xffff (+ value 1)))
@@ -263,14 +279,20 @@
                              (fn [] (inc-16bit (R n)))]
                        :BR  [[:R (P)]
                              (fn [] (short-branch page-address true (R (P))))]
+                       :BZ [[:R (P)]
+                             (fn [] (short-branch page-address (= (D) 0) (R (P))))]
                        :BNZ [[:R (P)]
                              (fn [] (short-branch page-address (not= (D) 0) (R (P))))]
+                       :LBR [[:R (P)]
+                             (fn [] long-address)]
+                       :LDN [[:D]
+                             (fn [] (mem (R n)))]
                        :LDA [[:D]
                              (fn [] (mem (R n)))
                              [:R n]
                              (fn [] (inc-16bit (R n)))]
                        :STR [[:mem (R n)]
-                             (fn [] (byte (D)))]
+                             (fn [] (mem-byte (D)))]
                        :GLO [[:D]
                              (fn [] (get-lo (R n)))]
                        :GHI [[:D]
@@ -285,14 +307,22 @@
                              (fn [] n)]
                        :LDI [[:D]
                              (fn [] immediate)]
+                       :ADI [[:D]
+                             (fn [] (bit-and 0xff (+ (D) immediate)))
+                             [:DF]
+                             (fn [] (if (> (+ (D) immediate) 0xff) 1 0))]
+                       :SMI [[:D]
+                             (fn [] (bit-and 0xff (- (D) immediate)))
+                             [:DF]
+                             (fn [] (if (>= (D) immediate) 1 0))]
                        :XRI [[:D]
                              (fn [] (bit-xor (D) immediate))]
                        :RLDI [[:R n]
                               (fn [] long-immediate)]
                        :SCAL [[:mem (R (X))]
-                              (fn [] (byte (get-lo (R n))))
+                              (fn [] (mem-byte (get-lo (R n))))
                               [:mem (dec-16bit (R (X)))]
-                              (fn [] (byte (get-hi (R n))))
+                              (fn [] (mem-byte (get-hi (R n))))
                               [:R (X)]
                               (fn [] (dec-16bit (dec-16bit (R (X)))))
                               [:R n]
@@ -306,6 +336,18 @@
                                         (mem (inc-16bit (inc-16bit (R (X)))))))
                               [:R (X)]
                               (fn [] (inc-16bit (inc-16bit (R (X)))))]
+                       :PRINTCHAR [[:D]
+                                   (fn [] (print (char (D))) (D))]
+
+                       ;; Just enough support for executing hex coded instructions
+                       ;; to get the Lisp running.
+                       :byte [[:R (P)]
+                              (fn []
+                                (if (= (:value instruction) 0xc0)
+                                  (+ (* (mem (R (P))) 0x100)
+                                     (mem (inc-16bit (R (P)))))
+                                  (R (P)))) ; silent NOP
+                              ]
                        )
               final-state (when effect (interpret processor effect))]
           (when final-state (dump-processor processor final-state))
