@@ -1,6 +1,13 @@
 (ns plisp.core)
 (use 'clojure.data)
 
+(def trace-options
+  [
+   ; :instruction
+   ; :processor
+   ; :memory
+   ])
+
 (defn no-operand-op
   "Parse a single byte operation with no register part."
   [op line]
@@ -254,17 +261,19 @@
 
 (defn next-state [processor]
   (let [[instruction processor] (instruction-fetch processor)]
-    (dump-instruction instruction)
+    (when (contains? trace-options :instruction)
+      (dump-instruction instruction))
     (when instruction
       (letfn
           [(P [] (:P processor))
            (X [] (:X processor))
            (D [] (:D processor))
            (mem [addr]
-             (print (format "%04x: %02x"
-                            addr
-                            (:value (get-in processor [:mem addr]))))
-             (newline)
+             (when (contains? trace-options :memory)
+               (print (format "%04x: %02x"
+                              addr
+                              (:value (get-in processor [:mem addr]))))
+               (newline))
              (:value (get-in processor [:mem addr])))
            (R [n] (get-in processor [:R n]))
            ]
@@ -350,12 +359,15 @@
                               ]
                        )
               final-state (when effect (interpret processor effect))]
-          (when final-state (dump-processor processor final-state))
+          (when (and final-state
+                     (contains? trace-options :processor))
+            (dump-processor processor final-state))
           final-state)))))
 
 (defn run []
   (let [processor (reset (prog) 0x6000)]
-    (dump-processor processor processor)
+    (when (contains? trace-options :processor)
+      (dump-processor processor processor))
     (loop [processor processor]
       (let [next (next-state processor)]
         (when next (recur next))))))
