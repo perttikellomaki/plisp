@@ -30,7 +30,35 @@
         BYTE #FF                ; STACK PAGE (STACK = ##FF)       OL. FF
         BYTE #E0                ; ARGSTACK PAGE (ARGSTACK = ##00) OL. E0
         BYTE #83                ; LISP CELLS START PAGE           OL. 83
-	
+
+;;; The following are formatted as Lisp integers (tag #0008).
+        
+700C:
+        BYTE #00                ; XPOS
+        BYTE #08
+        BYTE #00
+        BYTE #00
+7010:
+        BYTE #00                ; YPOS
+        BYTE #08
+        BYTE #00
+        BYTE #00
+7014:
+        BYTE #00                ; TABS
+        BYTE #08
+        BYTE #00
+        BYTE #00
+7018:
+        BYTE #00                ; OLD-X
+        BYTE #08
+        BYTE #00
+        BYTE #00
+701C:
+        BYTE #00                ; OLD-Y
+        BYTE #08
+        BYTE #00
+        BYTE #00
+
         ;; LISP-TULKKI
 
 6000:   
@@ -101,23 +129,63 @@
         INC F
         STR F
         
-;;; Original code has a call to I/O init. Replaced here with NOPs.
-        ;; SCAL 4 E72F    ; I/O INIT
-        NOP
-        NOP
-        NOP
-        NOP
-
+        SCAL 4 E72F    ; I/O INIT
         RLDI 5 #65F3            ; R5 = ML-FN CALL
 
 6049:
         SCAL 4 60D1             ; PROMPT
         
         STRING " P-LISP FOR 1805 vers 1.0 210884"
-        BYTE #0d
-        BYTE #0a
+        BYTE #0D
+        BYTE #0A
         STRING " C 1984 PERTTI KELLOMÄKI      "
-        BYTE #0d
-        BYTE #0a
+        BYTE #0D
+        BYTE #0A
         BYTE #00
+
+
+;;; PROMPT
+
+60D1:
+        LDA 4
+        BZ DA
+        SCAL 4 60DC
+        BR D1
+        SRET 4
+
+;;; OUT: UPDATE TABS
+
+60DC:
+        STR 2                   ; SAVE d
+        RLDI F #7017            ; RF OS TABS
+        SMI #08                 ; BS?
+        BNZ EA
+        LDN F
+        SMI #01
+60E8:
+        BR F5
+
+        SMI #04                 ; CLS?
+        BZ F5
+        SMI #01                 ; CR?
+        BZ F5
+
+        LDN F                   ; INC TABS
+        ADI #01
+        STR F                   ; VIE TABS
+
+        LDN 2
+        LBR 7003
+        
+        
+;;; The code has references to I/O code at E9 and E7 pages.
+;;; This does not show up in the memory map and there is no
+;;; surviving documentation. It is replaced here with pseudo
+;;; operations PRINTCHAR and READCHAR.
+
+E72F:
+        SRET 4
+E731:
+        PRINTCHAR
+        SRET 4
 
