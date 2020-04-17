@@ -8,37 +8,41 @@
    ; :memory
    ])
 
+;;;
+;;; Parsers for lines of assembly.
+;;;
+
 (defn no-operand-op
   "Parse a single byte operation with no register part."
   [op line]
-  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s*(;.*)*" "OP" op))]
-    (let [[_ op] (re-matches re line)]
-      (if op
-        {:op (keyword op) :bytes 1}))))
+  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s*(;.*)*" "OP" op))
+        [_ op] (re-matches re line)]
+    (if op
+      {:op (keyword op) :bytes 1})))
 
 (defn register-op
   "Parse a register operation."
   [op line]
-  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+([0-9a-fA-F])\\s*(;.*)*" "OP" op))]
-    (let [[_ op reg] (re-matches re line)]
-      (if op
-        {:op (keyword op) :n (read-string (str "0x" reg)) :bytes 1}))))
+  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+([0-9a-fA-F])\\s*(;.*)*" "OP" op))
+        [_ op reg] (re-matches re line)]
+    (if op
+      {:op (keyword op) :n (read-string (str "0x" reg)) :bytes 1})))
 
 (defn immediate-op
   "Parse an immediate operation."
   [op line]
-  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+#([0-9a-fA-F][0-9a-fA-F])\\s*(;.*)*" "OP" op))]
-    (let [[_ op operand] (re-matches re line)]
-      (if op
-        {:op (keyword op) :immediate (read-string (str "0x" operand)) :bytes 2}))))
+  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+#([0-9a-fA-F][0-9a-fA-F])\\s*(;.*)*" "OP" op))
+        [_ op operand] (re-matches re line)]
+    (if op
+      {:op (keyword op) :immediate (read-string (str "0x" operand)) :bytes 2})))
 
 (defn register-immediate-op
   "Parse a register immediate operation."
   [op line]
-  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+([0-9a-fA-F])\\s+#([0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])\\s*(;.*)*" "OP" op))]
-    (let [[_ op reg operand] (re-matches re line)]
-      (if op
-        {:op (keyword op) :n (read-string (str "0x" reg)) :long-immediate (read-string (str "0x" operand)) :bytes 4}))))
+  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+([0-9a-fA-F])\\s+#([0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])\\s*(;.*)*" "OP" op))
+        [_ op reg operand] (re-matches re line)]
+    (if op
+      {:op (keyword op) :n (read-string (str "0x" reg)) :long-immediate (read-string (str "0x" operand)) :bytes 4})))
 
 (defn subroutine-call-op
   "Parse a subroutine call instruction."
@@ -59,18 +63,18 @@
 (defn short-branch-op
   "Parse a short branch operation."
   [op line]
-  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+([0-9a-fA-F][0-9a-fA-F])\\s*(;.*)*" "OP" op))]
-    (let [[_ op address] (re-matches re line)]
-      (if op
-        {:op (keyword op) :page-address (read-string (str "0x" address)) :bytes 2}))))
+  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+([0-9a-fA-F][0-9a-fA-F])\\s*(;.*)*" "OP" op))
+        [_ op address] (re-matches re line)]
+    (if op
+      {:op (keyword op) :page-address (read-string (str "0x" address)) :bytes 2})))
 
 (defn long-branch-op
   "Parse a long branch operation."
   [op line]
-  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+([0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])\\s*(;.*)*" "OP" op))]
-    (let [[_ op address] (re-matches re line)]
-      (if op
-        {:op (keyword op) :long-address (read-string (str "0x" address)) :bytes 3}))))
+  (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+([0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])\\s*(;.*)*" "OP" op))
+        [_ op address] (re-matches re line)]
+    (if op
+      {:op (keyword op) :long-address (read-string (str "0x" address)) :bytes 3})))
 
 (defn address-directive
   "Parse an address directive."
@@ -98,7 +102,6 @@
   [line]
   (if (re-matches #"\s*(;.*)*" line)
     {:op :empty :bytes 0}))
-
 
 (defn parse-line
   "Parse a single line of assembly."
@@ -136,7 +139,13 @@
    (no-operand-op "PRINTCHAR" line)
    ))
 
-(defn layout [instructions]
+;;;
+;;; Lay out instructions in memory.
+;;;
+
+(defn layout
+  "Lay out instructions in memory. Returns a map representing the memory."
+  [instructions]
   (loop [addr 0
          instructions instructions
          memory {}]
@@ -163,10 +172,20 @@
                      insns
                      (assoc-in memory [addr] insn)))))))
 
-(defn prog []
-   (with-open [rdr (clojure.java.io/reader "lisp.asm")]
-     (layout
-      (map parse-line (reduce conj [] (line-seq rdr))))))
+;;;
+;;; Read assembly program from file lisp.asm.
+;;;
+
+(defn prog
+  "Assembly program from lisp.asm."
+  []
+  (with-open [rdr (clojure.java.io/reader "lisp.asm")]
+    (layout
+     (map parse-line (reduce conj [] (line-seq rdr))))))
+
+;;;
+;;; The processor state.
+;;;
 
 (defn reset
   "Initial state of the processor. Optionally with starting address in R0."
@@ -180,8 +199,15 @@
     :mem prog
     }))
 
+;;;
+;;; Execute an instruction.
+;;; Each effect consists of a target suitable for assoc-in,
+;;; and a thunk yielding the new value of the target.
+;;; 
 
-(defn interpret [processor effects]
+(defn execute-instruction
+  "Execute an instruction by applying effects to procesor state."
+  [processor effects]
   (loop [effects effects
          partial processor]
     (if (empty? effects)
@@ -190,7 +216,14 @@
             partial (assoc-in partial target (produce-value))]
         (recur rest partial)))))
 
-(defn instruction-fetch [processor]
+;;;
+;;; Fetch an instruction.
+;;; Returns the instruction and new processor state.
+;;;
+
+(defn instruction-fetch
+  "Fetch an instruction from R(P) and advance R(P)."
+  [processor]
   (let [pc (get-in processor [:R (:P processor)])
         instruction (get-in processor [:mem pc])]
     [instruction
@@ -198,6 +231,10 @@
        (assoc-in processor
                  [:R (:P processor)]
                  (+ pc (:bytes instruction))))]))
+
+;;;
+;;; Helpers for implementing instuction semantics.
+;;;
 
 (defn mem-byte [val] {:op :byte :value val})
 
@@ -224,7 +261,13 @@
     (replace-lo pc page-address)
     pc))
 
-(defn dump-instruction [instruction]
+;;;
+;;; Dumping of instructions and processor state.
+;;;
+
+(defn dump-instruction
+  "Dump a single instruction."
+  [instruction]
   (print (:op instruction))
   (when (:n instruction) (print (format " %x" (:n instruction))))
   (when (:immediate instruction) (print (format " #%02x" (:immediate instruction))))
@@ -234,7 +277,9 @@
   (newline))
 
 
-(defn dump-processor [previous processor]
+(defn dump-processor
+  "Dump processor state."
+  [previous processor]
   (print (format "D: %02x  P: %x  X: %x\n"
                  (:D processor)
                  (:P processor)
@@ -250,16 +295,38 @@
       (doseq [[addr val] (:mem changes)]
         (print (format "mem %04x: %02x\n" addr (:value val)))))))
 
-(defn dump-address [addr-val]
+(defn dump-address
+  "Dump memory address."
+  [addr-val]
   (let [[addr val] addr-val]
-    (if (int? val)
-      (format "%04x: %02x %s" addr val (char val))
-      (format "%04x: %s" addr val))))
+    (format "%04x: %s" addr val)))
 
-(defn lst [memory]
+(defn lst
+  "List memory contents."
+  [memory]
   (map dump-address (sort memory)))
 
-(defn next-state [processor]
+;;;
+;;; The processor simulator proper.
+;;; Each instruction is described as a list of effects on processor state.
+;;; Each effect consists of a sequence of keys which specifies a location
+;;; in processor state, and a parameterless function which produces the
+;;; new value. For example, immediate XOR instruction is specified as:
+;;;
+;;;       :XRI [[:D]
+;;;             (fn [] (bit-xor (D) immediate))]
+;;;
+;;; The [:D] tells that the D register (accumulator) is to be changed,
+;;; and the new value is given by xoring the current D register with the
+;;; immediate byte following the opcode.
+;;;
+;;; Function next-state returns the new processor state after
+;;; executing a single instruction.
+;;;
+
+(defn next-state
+  "Return the next state of the processor after executing one instruction."
+  [processor]
   (let [[instruction processor] (instruction-fetch processor)]
     (when (contains? trace-options :instruction)
       (dump-instruction instruction))
@@ -275,8 +342,7 @@
                               (:value (get-in processor [:mem addr]))))
                (newline))
              (:value (get-in processor [:mem addr])))
-           (R [n] (get-in processor [:R n]))
-           ]
+           (R [n] (get-in processor [:R n]))]
         (let [n (:n instruction)
               immediate (:immediate instruction)
               long-immediate (:long-immediate instruction)
@@ -358,11 +424,15 @@
                                   (R (P)))) ; silent NOP
                               ]
                        )
-              final-state (when effect (interpret processor effect))]
+              final-state (when effect (execute-instruction processor effect))]
           (when (and final-state
                      (contains? trace-options :processor))
             (dump-processor processor final-state))
           final-state)))))
+
+;;;
+;;; Run Lisp.
+;;;
 
 (defn run []
   (let [processor (reset (prog) 0x6000)]
