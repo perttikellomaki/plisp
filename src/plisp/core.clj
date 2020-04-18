@@ -328,7 +328,7 @@
   "Return the next state of the processor after executing one instruction."
   [processor]
   (let [[instruction processor] (instruction-fetch processor)]
-    (when (contains? trace-options :instruction)
+    (when (some #{:instruction} trace-options)
       (dump-instruction instruction))
     (when instruction
       (letfn
@@ -336,7 +336,7 @@
            (X [] (:X processor))
            (D [] (:D processor))
            (mem [addr]
-             (when (contains? trace-options :memory)
+             (when (some #{:memory} trace-options)
                (print (format "%04x: %02x"
                               addr
                               (:value (get-in processor [:mem addr]))))
@@ -426,7 +426,7 @@
                        )
               final-state (when effect (execute-instruction processor effect))]
           (when (and final-state
-                     (contains? trace-options :processor))
+                     (some #{:processor} trace-options))
             (dump-processor processor final-state))
           final-state)))))
 
@@ -436,7 +436,7 @@
 
 (defn run []
   (let [processor (reset (prog) 0x6000)]
-    (when (contains? trace-options :processor)
+    (when (some #{:processor} trace-options)
       (dump-processor processor processor))
     (loop [processor processor]
       (let [next (next-state processor)]
