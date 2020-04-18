@@ -184,6 +184,24 @@
     (layout
      (map parse-line (reduce conj [] (line-seq rdr))))))
 
+
+;;;
+;;; Default reader and writer.
+;;;
+
+(defn writer-impl [cumul]
+  (fn
+    ([] (clojure.string/join cumul))
+    ([c]
+     (print c)
+     (writer-impl (conj cumul c)))))
+
+(defn default-writer
+  "The default writer writes one character to stdout and returns a new writer.
+  Without argument dumps a string containing all characters written so far."
+  []
+  (writer-impl []))
+
 ;;;
 ;;; The processor state.
 ;;;
@@ -191,13 +209,15 @@
 (defn reset
   "Initial state of the processor. Optionally with starting address in R0."
   ([prog] (reset prog 0x0000))
-  ([prog start-addr]
+  ([prog start-addr] (reset prog start-addr (default-writer)))
+  ([prog start-addr writer]
    {:D 0x00
     :DF 0
     :P 0x0
     :X 0x0
     :R [start-addr 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000]
     :mem prog
+    :writer writer
     :running true
     }))
 
@@ -415,8 +435,8 @@
                                         (mem (inc-16bit (inc-16bit (R (X)))))))
                               [:R (X)]
                               (fn [] (inc-16bit (inc-16bit (R (X)))))]
-                       :PRINTCHAR [[:D]
-                                   (fn [] (print (char (D))) (D))]
+                       :PRINTCHAR [[:writer]
+                                   (fn [] ((:writer processor) (char (D))))]
 
                        ;; Just enough support for executing hex coded instructions
                        ;; to get the Lisp running.
