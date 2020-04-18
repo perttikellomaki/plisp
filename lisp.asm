@@ -143,7 +143,7 @@
         BYTE #0A
         BYTE #00
 
-
+       IDLE                    ; Not in original code, here to stop processor simulation.
 ;;; PROMPT
 
 60D1:
@@ -177,7 +177,8 @@
         LDN 2
         LBR 7003
         
-        
+
+
 ;;; The code has references to I/O code at E9 and E7 pages.
 ;;; This does not show up in the memory map and there is no
 ;;; surviving documentation. It is replaced here with pseudo
