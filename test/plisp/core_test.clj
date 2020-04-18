@@ -18,6 +18,14 @@
            changes)
          (recur (next-state processor) (- n 1)))))))
 
+(deftest test-idle
+  (let [changes
+        (run-prog
+         ["  IDLE"])]
+    (is (= {:R [1]
+            :running false}
+           changes))))
+
 (deftest test-nop
   (let [changes
         (run-prog

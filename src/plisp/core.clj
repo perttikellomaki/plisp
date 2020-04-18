@@ -111,6 +111,7 @@
    (byte-directive line)
    (string-directive line)
    (empty-line line)
+   (no-operand-op "IDLE" line)
    (no-operand-op "NOP" line)
    (register-op "LDN" line)
    (register-op "INC" line)
@@ -197,6 +198,7 @@
     :X 0x0
     :R [start-addr 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000]
     :mem prog
+    :running true
     }))
 
 ;;;
@@ -349,6 +351,8 @@
               page-address (:page-address instruction)
               long-address (:long-address instruction)
               effect (case (:op instruction)
+                       :IDLE [[:running]
+                              (fn [] false)]
                        :NOP []
                        :INC [[:R n]
                              (fn [] (inc-16bit (R n)))]
@@ -440,4 +444,6 @@
       (dump-processor processor processor))
     (loop [processor processor]
       (let [next (next-state processor)]
-        (when next (recur next))))))
+        (if (:running next)
+          (recur next)
+          next)))))
