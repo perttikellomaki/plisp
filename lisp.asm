@@ -143,6 +143,30 @@
         BYTE #0A
         BYTE #00
 
+        ;; original calls FREE
+        ;; SCAL 4 XXXX
+        NOP
+        NOP
+        NOP
+        NOP
+
+        ;; original calls PRINT # FREE CELLS
+        ;; SCAL 4 XXXX
+        NOP
+        NOP
+        NOP
+        NOP
+
+        ;; The original has SCAL 4 6091 but that is clearly a bug.
+        SCAL 4 60D1             ; PROMPT
+        STRING " CELLS FREE"
+        BYTE #0D
+        BYTE #0A
+        STRING "LISP RUNNING"
+        BYTE #0D
+        BYTE #0A
+        BYTE #00
+        
        IDLE                    ; Not in original code, here to stop processor simulation.
 ;;; PROMPT
 
