@@ -291,3 +291,8 @@
          1)]
     (is (= {:R [0x1234]}
            changes))))
+
+(deftest test-lisp
+  (let [final-state (run)]
+    (is (= " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n"
+           ((:writer final-state))))))
