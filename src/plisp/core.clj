@@ -113,6 +113,7 @@
    (empty-line line)
    (no-operand-op "IDLE" line)
    (no-operand-op "NOP" line)
+   (no-operand-op "XOR" line)
    (register-op "LDN" line)
    (register-op "INC" line)
    (register-op "DEC" line)
@@ -131,6 +132,7 @@
    (immediate-op "LDI" line)
    (immediate-op "ADI" line)
    (immediate-op "SMI" line)
+   (immediate-op "ORI" line)
    (immediate-op "XRI" line)
    (register-immediate-op "RLDI" line)
    (subroutine-call-op "SCAL" line)
@@ -406,6 +408,8 @@
                              (fn [] n)]
                        :LDI [[:D]
                              (fn [] immediate)]
+                       :XOR [[:D]
+                             (fn [] (bit-xor (D) (mem (R (X)))))]
                        :ADI [[:D]
                              (fn [] (bit-and 0xff (+ (D) immediate)))
                              [:DF]
@@ -414,6 +418,8 @@
                              (fn [] (bit-and 0xff (- (D) immediate)))
                              [:DF]
                              (fn [] (if (>= (D) immediate) 1 0))]
+                       :ORI [[:D]
+                             (fn [] (bit-or (D) immediate))]
                        :XRI [[:D]
                              (fn [] (bit-xor (D) immediate))]
                        :RLDI [[:R n]
