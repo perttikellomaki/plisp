@@ -360,12 +360,12 @@
            (X [] (:X processor))
            (D [] (:D processor))
            (mem [addr]
+             ;; assume uninitialized memory is zeroed out
+             (let [value (or (:value (get-in processor [:mem addr]))
+                             0x00)]
              (when (some #{:memory} trace-options)
-               (print (format "%04x: %02x"
-                              addr
-                              (:value (get-in processor [:mem addr]))))
-               (newline))
-             (:value (get-in processor [:mem addr])))
+               (println (format "%04x: %02x" addr value)))
+             value))
            (R [n] (get-in processor [:R n]))]
         (let [n (:n instruction)
               immediate (:immediate instruction)
