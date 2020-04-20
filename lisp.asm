@@ -143,12 +143,8 @@
         BYTE #0A
         BYTE #00
 
-        ;; original calls FREE
-        ;; SCAL 4 XXXX
-        NOP
-        NOP
-        NOP
-        NOP
+        ;; Original calls FREE, which is presumably same as GARBACOLL
+        SCAL 4 6131
 
         ;; original calls PRINT # FREE CELLS
         ;; SCAL 4 XXXX
@@ -166,8 +162,19 @@
         BYTE #0D
         BYTE #0A
         BYTE #00
-        
+
+60b8:
+        LDI #00                 ; TULKKAUSSILMUKKA
+        PHI 8                   ; NO ERR
+        SCAL 4 60D1
+        BYTE #0D
+        BYTE #0A
+        BYTE #2D                ; the original code has #0D but that is clearly a typo
+        BYTE #00
+        SCAL 4 62EC
+
        IDLE                    ; Not in original code, here to stop processor simulation.
+	
 ;;; PROMPT
 
 60D1:
@@ -201,7 +208,31 @@
         LDN 2
         LBR 7003
         
+;;; GARBACOLL
+6131:
+        RLDI F #700A            ; RF OS ARGSTACK PAGE
+        LDA F
+        STR 2
+        LDN F
+6138:
+        PHI F                   ; RF OS LISP CELLS START
+        LDI #00
+        PLO F
+613C:   
+        INC F                   ; VAPAUTA KAIKKI SOLMUT
+        LDN F
+        ORI #01
+        STR F
+        INC F
+        INC F
+        INC F
+        GHI F
+        XOR
+        BNZ 3C
 
+        ;; todo: continue with marking
+        SRET 4
+        
 
 ;;; The code has references to I/O code at E9 and E7 pages.
 ;;; This does not show up in the memory map and there is no
