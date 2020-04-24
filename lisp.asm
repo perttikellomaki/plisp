@@ -171,7 +171,14 @@
         BYTE #0A
         BYTE #2D                ; the original code has #0D but that is clearly a typo
         BYTE #00
-        SCAL 4 62EC
+        SCAL 4 62EC             ; READ
+
+        NOP                     ; SCAL 4 6511 ; EVAL
+        NOP
+        NOP
+        NOP
+
+        SCAL 4 6442             ; PRINT (original calls 62ec but the is clearly a typo)
 
         IDLE                    ; Not in original code, here to stop processor simulation.
 	
@@ -233,13 +240,84 @@
         ;; todo: continue with marking
         SRET 4
 
+;;; KILLSPACES
+
+62D8:
+        LDA F                   ; LUE MERKKI
+        BNZ E5                  ; RIVIN LOPPU?
+        SCAL 4 7000             ; JOS ON, LUE LISÄÄ
+62DF:
+        RLDI F #7080
+        BR D8
+
+        XRI #20
+        BZ D8
+        DEC F
+        SRET 4
+
 ;;; READ
         
 62EC:
         SCAL 4 7000             ; ENTRY FROM LISP
 
         RLDI F #707F            ; ML FN ENTRY
+        LDN F
+        PLO F                   ; RF OS. LUKEMISKOHTAA
+62F6:
+        SCAL 4 62D8             ; KILLSPACES
+
+        LDN F                   ; LUE MERKKI
+        SMI #27                 ; HEITTOMERKKI?
+
+        NOP                     ; TODO: ;LBZ 6661
+        NOP
+        NOP
+
+        SMI #01                 ; ALKUSULKU?
+        BZ D9                   ; ON -> LISTREAD
+
 	IDLE
+
+;;; LISTREAD
+
+63D9:   
+        INC F                   ; SKIP ALKUSULKU
+        SCAL 4 62D8             ; KILLSPACES
+63DE:
+        LDN F                   ; )?
+        SMI #29
+        BNZ E7
+
+        INC F                   ; JOS ON, RET NIL
+        LBR 6417
+
+;;; NILRET
+
+6417:
+        SEX 2
+        RLDI 6 #0000
+        SRET 4
+
+;;; PRINTSUB
+
+6442:
+        GHI 6                   ; T OR NIL
+        BNZ 5A                  ; EI -> YLI
+6445:
+        GLO 6                   ; JOS ON, KUMPI?
+        BNZ 52
+
+        SCAL 4 60D1
+        BYTE #4E                ; N
+        BYTE #49                ; I
+        BYTE #4C                ; L
+        BYTE #00
+        SRET 4
+6452:
+        SCAL 4 60D1
+        BYTE #54                ; T
+        BYTE #00
+        SRET 4
 
 ;;; The code has references to I/O code at E9 and E7 pages.
 ;;; This does not show up in the memory map and there is no
