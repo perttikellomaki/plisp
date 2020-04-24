@@ -47,7 +47,19 @@
     (is (= {:R [6 nil nil nil nil 0x0001]}
            changes))))
 
-;; TODO: test-dec
+(deftest test-dec
+  (let [changes
+        (run-prog
+         ["  RLDI 1 #1234"
+          "  DEC 1"])]
+    (is (= changes
+           {:R [5 0X1233]})))
+  (let [changes
+        (run-prog
+         ["  DEC 5"
+          "  DEC 5"])]
+    (is (= {:R [2 nil nil nil nil 0xfffe]}
+           changes))))
 
 (deftest test-br
   (let [changes

@@ -387,6 +387,8 @@
                        :NOP []
                        :INC [[:R n]
                              (fn [] (inc-16bit (R n)))]
+                       :DEC [[:R n]
+                             (fn [] (dec-16bit (R n)))]
                        :BR  [[:R (P)]
                              (fn [] (short-branch page-address true (R (P))))]
                        :BZ [[:R (P)]
