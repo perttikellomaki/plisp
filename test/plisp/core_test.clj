@@ -294,6 +294,19 @@
                   0xffff (mem-byte 0x00)}}
            changes))))
 
+(deftest test-rsxd
+  (let [changes
+        (run-prog
+         ["  RLDI 1 #1234"
+          "  RLDI 2 #ffff"
+          "  SEX 2"
+          "  RSXD 1"])]
+    (is (= {:R [11 0x1234 0Xfffd]
+            :X 2
+            :mem {0xfffe (mem-byte 0x12)
+                  0xffff (mem-byte 0x34)}}
+           changes))))
+
 (deftest test-byte
   (let [changes
         (run-prog

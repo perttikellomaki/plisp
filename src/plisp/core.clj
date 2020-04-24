@@ -52,7 +52,7 @@
     (if op
       {:op (keyword op) :n (read-string (str "0x" reg)) :long-address (read-string (str "0x" address)) :bytes 4})))
 
-(defn subroutine-return-op
+(defn extended-register-op
   "Parse a subroutine call instruction."
   [op line]
   (let [re (re-pattern (clojure.string/replace "\\s*(OP)\\s+([0-9a-fA-F])\\s*(;.*)*" "OP" op))
@@ -136,7 +136,8 @@
    (immediate-op "XRI" line)
    (register-immediate-op "RLDI" line)
    (subroutine-call-op "SCAL" line)
-   (subroutine-return-op "SRET" line)
+   (extended-register-op "SRET" line)
+   (extended-register-op "RSXD" line)
 
    ;; pseudo ops
    (no-operand-op "PRINTCHAR" line)
@@ -452,6 +453,12 @@
                                         (mem (inc-16bit (inc-16bit (R (X)))))))
                               [:R (X)]
                               (fn [] (inc-16bit (inc-16bit (R (X)))))]
+                       :RSXD [[:mem (R (X))]
+                              (fn [] (mem-byte (get-lo (R n))))
+                              [:mem (dec-16bit (R (X)))]
+                              (fn [] (mem-byte (get-hi (R n))))
+                              [:R (X)]
+                              (fn [] (dec-16bit (dec-16bit (R (X)))))]
                        :READCHAR [[:D]
                                   (fn [] (let [[c r] ((:reader processor))] (int c)))
                                   [:reader]
