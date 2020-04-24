@@ -173,10 +173,7 @@
         BYTE #00
         SCAL 4 62EC             ; READ
 
-        NOP                     ; SCAL 4 6511 ; EVAL
-        NOP
-        NOP
-        NOP
+        SCAL 4 6511             ; EVAL
 
         SCAL 4 6442             ; PRINT (original calls 62ec but the is clearly a typo)
 
@@ -317,6 +314,34 @@
         SCAL 4 60D1
         BYTE #54                ; T
         BYTE #00
+        SRET 4
+
+;;; EVAL
+
+6511:
+        GHI 7                   ; TILAA?
+        STR 2
+        GHI 2
+        SMI #01
+        XOR
+        BNZ 1C
+
+        LDI #08                 ; EI -> STACK OVERFLOW
+        PHI 8
+
+        RSXD 6                  ; SAVE EXPR
+
+        GHI 8                   ; ERR -> DON'T EVAL
+        BNZ 8E
+
+        GHI 6                   ; T OR NIL?
+        BZ 8E                   ; ON -> RET
+
+        IDLE
+
+658E:
+        INC 2                   ; JOS EI, PALAA
+        INC 2
         SRET 4
 
 ;;; The code has references to I/O code at E9 and E7 pages.
