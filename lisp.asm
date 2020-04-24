@@ -173,7 +173,7 @@
         BYTE #00
         SCAL 4 62EC
 
-       IDLE                    ; Not in original code, here to stop processor simulation.
+        IDLE                    ; Not in original code, here to stop processor simulation.
 	
 ;;; PROMPT
 
@@ -232,7 +232,14 @@
 
         ;; todo: continue with marking
         SRET 4
+
+;;; READ
         
+62EC:
+        SCAL 4 7000             ; ENTRY FROM LISP
+
+        RLDI F #707F            ; ML FN ENTRY
+	IDLE
 
 ;;; The code has references to I/O code at E9 and E7 pages.
 ;;; This does not show up in the memory map and there is no
@@ -245,3 +252,24 @@ E731:
         PRINTCHAR
         SRET 4
 
+;;; The call to this address expects to get a line of input in the
+;;; read buffer in work page. The code here approximates what would
+;;; have been in the original.
+        
+E906:
+        RLDI F #707F            ; read buffer pointer
+        LDI #80
+        STR F
+        
+        INC F
+        READCHAR
+        STR F
+        XRI #0D                 ; a carriage return ends line
+        BZ 19
+        GLO F
+        XRI #FF                 ; forced end of line if at end of buffer
+        BNZ 0D
+
+        LDI #00                 ; mark end of line with #00
+        STR F
+        SRET 4

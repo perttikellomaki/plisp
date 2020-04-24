@@ -140,6 +140,7 @@
 
    ;; pseudo ops
    (no-operand-op "PRINTCHAR" line)
+   (no-operand-op "READCHAR" line)
    ))
 
 ;;;
@@ -204,6 +205,12 @@
   []
   (writer-impl []))
 
+(defn reader-impl [chars]
+  (fn [] (let [[c & cs] chars] [c (reader-impl cs)])))
+
+(defn reader [input]
+  (reader-impl (seq input)))
+
 ;;;
 ;;; The processor state.
 ;;;
@@ -211,14 +218,16 @@
 (defn reset
   "Initial state of the processor. Optionally with starting address in R0."
   ([prog] (reset prog 0x0000))
-  ([prog start-addr] (reset prog start-addr (default-writer)))
-  ([prog start-addr writer]
+  ([prog start-addr] (reset prog start-addr (reader "") (default-writer)))
+  ([prog start-addr reader] (reset prog start-addr reader (default-writer)))
+  ([prog start-addr reader writer]
    {:D 0x00
     :DF 0
     :P 0x0
     :X 0x0
     :R [start-addr 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000]
     :mem prog
+    :reader reader
     :writer writer
     :running true
     }))
@@ -441,6 +450,10 @@
                                         (mem (inc-16bit (inc-16bit (R (X)))))))
                               [:R (X)]
                               (fn [] (inc-16bit (inc-16bit (R (X)))))]
+                       :READCHAR [[:D]
+                                  (fn [] (let [[c r] ((:reader processor))] (int c)))
+                                  [:reader]
+                                  (fn [] (let [[c r] ((:reader processor))] r))]
                        :PRINTCHAR [[:writer]
                                    (fn [] ((:writer processor) (char (D))))]
 
@@ -464,12 +477,14 @@
 ;;; Run Lisp.
 ;;;
 
-(defn run []
-  (let [processor (reset (prog) 0x6000)]
-    (when (some #{:processor} trace-options)
-      (dump-processor processor processor))
-    (loop [processor processor]
-      (let [next (next-state processor)]
-        (if (:running next)
-          (recur next)
-          next)))))
+(defn run
+  ([] (run (reader "")))
+  ([reader]
+   (let [processor (reset (prog) 0x6000 reader)]
+     (when (some #{:processor} trace-options)
+       (dump-processor processor processor))
+     (loop [processor processor]
+       (let [next (next-state processor)]
+         (if (:running next)
+           (recur next)
+           next))))))
