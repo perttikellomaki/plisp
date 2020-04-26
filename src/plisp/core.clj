@@ -121,6 +121,7 @@
    (short-branch-op "BZ" line)
    (short-branch-op "BNZ" line)
    (long-branch-op "LBR" line)
+   (no-operand-op "LSNZ" line)
    (register-op "LDA" line)
    (register-op "STR" line)
    (register-op "GLO" line)
@@ -137,6 +138,7 @@
    (register-immediate-op "RLDI" line)
    (subroutine-call-op "SCAL" line)
    (extended-register-op "SRET" line)
+   (extended-register-op "RLXA" line)
    (extended-register-op "RSXD" line)
 
    ;; pseudo ops
@@ -398,6 +400,10 @@
                              (fn [] (short-branch page-address (not= (D) 0) (R (P))))]
                        :LBR [[:R (P)]
                              (fn [] long-address)]
+                       :LSNZ [[:R (P)]
+                              (fn [] (if (not= (D) 0)
+                                       (inc-16bit (inc-16bit (R (P))))
+                                       (R (P))))]
                        :LDN [[:D]
                              (fn [] (mem (R n)))]
                        :LDA [[:D]
@@ -451,6 +457,11 @@
                               [:R n]
                               (fn [] (+ (* (mem (inc-16bit (R (X)))) 0x100)
                                         (mem (inc-16bit (inc-16bit (R (X)))))))
+                              [:R (X)]
+                              (fn [] (inc-16bit (inc-16bit (R (X)))))]
+                       :RLXA [[:R n]
+                              (fn [] (+ (* (mem (R (X))) 0x100)
+                                        (mem (inc-16bit (R (X))))))
                               [:R (X)]
                               (fn [] (inc-16bit (inc-16bit (R (X)))))]
                        :RSXD [[:mem (R (X))]

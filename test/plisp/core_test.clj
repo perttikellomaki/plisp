@@ -91,6 +91,25 @@
             :R [0x0006]}
            changes))))
 
+(deftest test-lsnz
+  (let [changes
+        (run-prog
+         ["  LDI #12"
+          "  LSNZ"
+          "  LDI #34"]
+         2)]
+    (is (= {:D 0x12
+            :R [0x0005]}
+           changes)))
+  (let [changes
+        (run-prog
+         ["  LDI #00"
+          "  LSNZ"
+          "  LDI #34"])]
+    (is (= {:D 0x34
+            :R [0x0005]}
+           changes))))
+
 (deftest test-bnz
   (let [changes
         (run-prog
@@ -292,6 +311,20 @@
                   0xfffd (mem-byte 0x0a)
                   0xfffe (mem-byte 0x00)
                   0xffff (mem-byte 0x00)}}
+           changes))))
+
+(deftest test-rlxa
+  (let [changes
+        (run-prog
+         ["  RLDI 1 #0100"
+          "  SEX 1"
+          "  RLXA 2"
+          "0100:"
+          "  BYTE #12"
+          "  BYTE #34"]
+         3)]
+    (is (= {:R [7 0x0102 0X1234]
+            :X 1}
            changes))))
 
 (deftest test-rsxd
