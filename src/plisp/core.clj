@@ -301,17 +301,22 @@
 ;;; Dumping of instructions and processor state.
 ;;;
 
+(defn format-instruction
+  "Format a single instruction."
+  [instruction]
+  (str
+   (:op instruction)
+   (when (:n instruction) (format " %x" (:n instruction)))
+   (when (:immediate instruction) (format " #%02x" (:immediate instruction)))
+   (when (:long-immediate instruction) (format " #%04x" (:long-immediate instruction)))
+   (when (:page-address instruction) (format " %02x" (:page-address instruction)))
+   (when (:long-address instruction) (format " %04x" (:long-address instruction)))
+   (when (:value instruction) (format " %02x %s" (:value instruction) (char (:value instruction))))))
+
 (defn dump-instruction
   "Dump a single instruction."
   [instruction]
-  (print (:op instruction))
-  (when (:n instruction) (print (format " %x" (:n instruction))))
-  (when (:immediate instruction) (print (format " #%02x" (:immediate instruction))))
-  (when (:long-immediate instruction) (print (format " #%04x" (:long-immediate instruction))))
-  (when (:page-address instruction) (print (format " %02x" (:page-address instruction))))
-  (when (:long-address instruction) (print (format " %04x" (:long-address instruction))))
-  (newline))
-
+  (println (format-instruction instruction)))
 
 (defn dump-processor
   "Dump processor state."
@@ -335,12 +340,15 @@
   "Dump memory address."
   [addr-val]
   (let [[addr val] addr-val]
-    (format "%04x: %s" addr val)))
+    (str (format "%04x: " addr) (format-instruction val))))
 
 (defn lst
   "List memory contents."
-  [memory]
-  (map dump-address (sort memory)))
+  ([memory] (lst memory 0x0000 0xffff))
+  ([memory start end]
+   (map dump-address
+        (filter (fn [addr-val] (let [[addr val] addr-val] (<= start addr end)))
+                (sort memory)))))
 
 ;;;
 ;;; The processor simulator proper.
