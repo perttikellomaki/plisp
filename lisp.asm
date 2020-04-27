@@ -59,6 +59,16 @@
         BYTE #00
         BYTE #00
 
+702C:
+        BYTE #2F                ; READ SPECIAL CHR
+
+;;; ATOM BUFF
+7100:
+        BYTE #71                ; 2 1ST BYTES = END OF LIB ADDR
+        BYTE #02
+        BYTE #FF
+
+
         ;; LISP-TULKKI
 
 6000:   
@@ -272,6 +282,100 @@
 
         SMI #01                 ; ALKUSULKU?
         BZ D9                   ; ON -> LISTREAD
+        SMI #01                 ; LOPPUSULKU?
+        BZ DA                   ; ON -> LISTREAD
+        SMI #15                 ; > ?
+        BZ DA                   ; ON -> LISTREAD
+        ADI #02                 ; < ?
+        BNZ 1F                  ; JOS EI, LUE ATOMI
+6310:
+        SCAL 4 63D9             ; CALL LISTREAD
+        INC F
+
+        GLO F                   ; PÄIVITÄ READ PTR
+        STR 2
+        LDI #7F
+        PLO F
+        LDN 2
+        STR F
+        PLO F
+        SRET 4
+631F:
+        RLDI 6 #702C            ; HAE ERIKOISKOHTELUMERKKI AKKUUN
+	LDN 6
+
+        RLDI 6 #7100            ; R6 = STRING STOR.
+6328:
+        SEX 6                   ; R6 = END LIB
+        RLXA 6
+        SEX 2
+        INC 6
+        INC 6
+        INC 6
+
+        RSXD 6                  ; ATOMIN ALKUOS. PINOON
+        STR 2                   ; ERIKOISKOHTELUMERKKI
+
+        LDI #00                 ; RB.0 = CHR COUNT
+        PLO B
+
+        GHI 6
+        XRI #80
+        BNZ 40
+
+633A:   
+        LDI #05                 ; ERR: STRING STORAGE OVERFLOW
+        PHI 8
+        LBR 6417                ; RET NIL
+
+6340:
+        GLO B                   ; TOO LONG ATOM NAME?
+        XRI #FE
+	BZ 3A
+
+        LDN F                   ; RIVIN LOPPU?
+        BZ 71
+
+        STR 6                   ; EI -> VIE MERKKI
+        INC 6
+        INC B
+        INC F
+
+        XOR                     ; ERIKOISMERKKI?
+        BNZ 59
+
+        DEC 6                   ; JOS ON, VIE SEUR. MERKKI
+        LDN F
+        LSNZ
+        LDI #20
+        STR 6
+        INC 6
+        INC F
+        BR 35
+6359:
+        XOR                     ; PALAUTA MERKKI
+        XRI #35                 ; > ?
+        BZ 6E
+        XRI #02                 ; TAI < ?
+        BZ 6E
+        XRI #15                 ; TAI ) ?
+        BZ 6E
+        XRI #01                 ; TAI ( ?
+        BZ 6E
+        XRI #08                 ; TAI SPACE?
+        BNZ 35                  ; JOS EI, JATKA SIIRTOA
+
+        DEC F
+        DEC B
+        DEC 6
+
+        LDI #FF                 ; KIRJASTON LOPPU
+        STR 6
+6374:
+        INC 2                   ; RE = NIMEN ALKU
+        RLXA E
+        DEC 2
+        
 
 	IDLE
 
