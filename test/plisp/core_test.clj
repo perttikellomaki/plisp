@@ -226,6 +226,45 @@
             :mem {0x0100 (mem-byte 0x34)}}
            changes))))
 
+(deftest test-smbi
+  (let [changes
+        (run-prog
+         ;; calculate 0x0000 - 0x0001 to R1
+         ["  LDI #00"
+          "  SMI #01"
+          "  PLO 1"
+          "  LDI #00"
+          "  SMBI #00"
+          "  PHI 1"])]
+    (is (= {:D 0xff
+            :R [0x000a 0xffff]}
+           changes)))
+  (let [changes
+        (run-prog
+         ;; calculate 0x5678 - 0x1234 to R1
+         ["  LDI #78"
+          "  SMI #34"
+          "  PLO 1"
+          "  LDI #56"
+          "  SMBI #12"
+          "  PHI 1"])]
+    (is (= {:D 0x44
+            :DF 1
+            :R [0x000a 0x4444]}
+           changes)))
+  (let [changes
+        (run-prog
+         ;; calculate 0x1234 - 0x5678 to R1
+         ["  LDI #34"
+          "  SMI #78"
+          "  PLO 1"
+          "  LDI #12"
+          "  SMBI #56"
+          "  PHI 1"])]
+    (is (= {:D 0xbb
+            :R [0x000a 0xbbbc]}
+           changes))))
+
 (deftest test-plo-glo
   (let [changes
         (run-prog

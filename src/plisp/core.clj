@@ -184,6 +184,7 @@
    ;; 0x7D
    ;; 0x7E
    ;; 0x7F
+   (immediate-op "SMBI" line)
    ;; 0x8N
    (register-op "GLO" line)
    ;; 0x9N
@@ -259,7 +260,6 @@
       memory
       (let [[insn & insns] instructions
             op (:op insn)]
-        (println insn)
         (cond (= op :address)
               (recur (:address insn)
                      insns
@@ -421,8 +421,9 @@
 (defn dump-processor
   "Dump processor state."
   [previous processor]
-  (print (format "D: %02x  P: %x  X: %x\n"
+  (print (format "D: %02x  DF:%x  P: %x  X: %x\n"
                  (:D processor)
+                 (:DF processor)
                  (:P processor)
                  (:X processor)))
   (dotimes [n 4]
@@ -489,6 +490,7 @@
              [(P [] (:P processor))
               (X [] (:X processor))
               (D [] (:D processor))
+              (DF [] (:DF processor))
               (mem [addr]
                 ;; assume uninitialized memory is zeroed out
                 (let [value (or (:value (get-in processor [:mem addr]))
@@ -553,6 +555,19 @@
                                    (fn [] (mem-byte (D)))
                                    [:R (X)]
                                    (fn [] (dec-16bit (R (X))))]
+                            :SMBI [[:D]
+                                   (fn [] (bit-and
+                                           0xff
+                                           (- (D)
+                                              immediate
+                                              (if (= (DF) 0) 1 0))))
+                                  [:DF]
+                                  (fn [] (if (>= (- (D)
+                                                    immediate
+                                                    (if (= (DF) 0) 1 0))
+                                                 0)
+                                           1
+                                           0))]
                             :GLO [[:D]
                                   (fn [] (get-lo (R n)))]
                             :GHI [[:D]
