@@ -213,6 +213,19 @@
     (is (= {:R [4 0x1234]}
            changes))))
 
+(deftest test-stxd
+  (let [changes
+        (run-prog
+         ["  RLDI 1 #0100"
+          "  SEX 1"
+          "  LDI #34"
+          "  STXD"])]
+    (is (= {:D 0x34
+            :X 1
+            :R [0x0008 0x00ff]
+            :mem {0x0100 (mem-byte 0x34)}}
+           changes))))
+
 (deftest test-plo-glo
   (let [changes
         (run-prog

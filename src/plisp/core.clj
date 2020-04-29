@@ -171,6 +171,7 @@
    ;; 0x71
    ;; 0x72
    ;; 0x73
+   (no-operand-op "STXD" line)
    ;; 0x74
    ;; 0x75
    ;; 0x76
@@ -548,6 +549,10 @@
                                    (fn [] (dec-16bit (dec-16bit (R (X)))))]
                             :RLDI [[:R n]
                                    (fn [] long-immediate)]
+                            :STXD [[:mem (R (X))]
+                                   (fn [] (mem-byte (D)))
+                                   [:R (X)]
+                                   (fn [] (dec-16bit (R (X))))]
                             :GLO [[:D]
                                   (fn [] (get-lo (R n)))]
                             :GHI [[:D]
