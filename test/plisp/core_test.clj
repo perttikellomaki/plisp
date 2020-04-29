@@ -317,6 +317,15 @@
             :R [4]}
            changes))))
 
+(deftest test-ori
+  (let [changes
+        (run-prog
+         ["  LDI #0f"
+          "  ORI #f0"])]
+    (is (= {:D 0xff
+            :R [4]}
+           changes))))
+
 (deftest test-rldi
   (let [changes
         (run-prog
