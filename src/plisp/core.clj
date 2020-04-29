@@ -111,37 +111,133 @@
    (byte-directive line)
    (string-directive line)
    (empty-line line)
+   ;; 0x00
    (no-operand-op "IDLE" line)
-   (no-operand-op "NOP" line)
-   (no-operand-op "XOR" line)
-   (no-operand-op "OR" line)
+   ;; 0x0N
    (register-op "LDN" line)
+   ;; 0x1N
    (register-op "INC" line)
+   ;; 0x2N
    (register-op "DEC" line)
+   ;; 0x30
    (short-branch-op "BR" line)
+   ;; 0x31
+   ;; 0x32
    (short-branch-op "BZ" line)
+   ;; 0x33
+   ;; 0x34
+   ;; 0x35
+   ;; 0x36
+   ;; 0x37
+   ;; 0x38
+   ;; 0x39
+   ;; 0x3A
    (short-branch-op "BNZ" line)
-   (long-branch-op "LBR" line)
-   (no-operand-op "LSNZ" line)
+   ;; 0x3B
+   ;; 0x3C
+   ;; 0x3D
+   ;; 0x3E
+   ;; 0x3F
+   ;; 0x4N
    (register-op "LDA" line)
+   ;; 0x5N
    (register-op "STR" line)
-   (register-op "GLO" line)
-   (register-op "GHI" line)
-   (register-op "PLO" line)
-   (register-op "PHI" line)
-   (register-op "SEP" line)
-   (register-op "SEX" line)
-   (immediate-op "LDI" line)
-   (immediate-op "ADI" line)
-   (immediate-op "SMI" line)
-   (immediate-op "ORI" line)
-   (immediate-op "ANI" line)
-   (immediate-op "XRI" line)
-   (register-immediate-op "RLDI" line)
-   (subroutine-call-op "SCAL" line)
-   (extended-register-op "SRET" line)
+   ;; 0x60
+   ;; 0x61
+   ;; 0x62
+   ;; 0x63
+   ;; 0x64
+   ;; 0x65
+   ;; 0x66
+   ;; 0x67
+   ;; 0x68 6N
    (extended-register-op "RLXA" line)
+   ;; 0x68 8N
+   (subroutine-call-op "SCAL" line)
+   ;; 0x68 9N
+   (extended-register-op "SRET" line)
+   ;; 0x68 AN
    (extended-register-op "RSXD" line)
+   ;; 0x68 CN
+   (register-immediate-op "RLDI" line)
+   ;; 0x69
+   ;; 0x6A
+   ;; 0x6B
+   ;; 0x6C
+   ;; 0x6D
+   ;; 0x6E
+   ;; 0x6F
+   ;; 0x70
+   ;; 0x71
+   ;; 0x72
+   ;; 0x73
+   ;; 0x74
+   ;; 0x75
+   ;; 0x76
+   ;; 0x77
+   ;; 0x78
+   ;; 0x79
+   ;; 0x7A
+   ;; 0x7B
+   ;; 0x7C
+   ;; 0x7D
+   ;; 0x7E
+   ;; 0x7F
+   ;; 0x8N
+   (register-op "GLO" line)
+   ;; 0x9N
+   (register-op "GHI" line)
+   ;; 0xAN
+   (register-op "PLO" line)
+   ;; 0xBN
+   (register-op "PHI" line)
+   ;; 0xC0
+   (long-branch-op "LBR" line)
+   ;; 0xC1
+   ;; 0xC2
+   ;; 0xC3
+   ;; 0xC4
+   (no-operand-op "NOP" line)
+   ;; 0xC5
+   ;; 0xC6
+   (no-operand-op "LSNZ" line)
+   ;; 0xC7
+   ;; 0xC8
+   ;; 0xC9
+   ;; 0xCA
+   ;; 0xCB
+   ;; 0xCC
+   ;; 0xCD
+   ;; 0xCE
+   ;; 0xCF
+   ;; 0xDN
+   (register-op "SEP" line)
+   ;; 0xEN
+   (register-op "SEX" line)
+   ;; 0xF0
+   ;; 0xF1
+   (no-operand-op "OR" line)
+   ;; 0xF2
+   ;; 0xF3
+   (no-operand-op "XOR" line)
+   ;; 0xF4
+   ;; 0xF5
+   ;; 0xF6
+   ;; 0xF7
+   ;; 0xF8
+   (immediate-op "LDI" line)
+   ;; 0xF9
+   (immediate-op "ORI" line)
+   ;; 0xFA
+   (immediate-op "ANI" line)
+   ;; 0xFB
+   (immediate-op "XRI" line)
+   ;; 0xFC
+   (immediate-op "ADI" line)
+   ;; 0xFD
+   ;; 0xFE
+   ;; 0xFF
+   (immediate-op "SMI" line)
 
    ;; pseudo ops
    (no-operand-op "PRINTCHAR" line)
@@ -162,6 +258,7 @@
       memory
       (let [[insn & insns] instructions
             op (:op insn)]
+        (println insn)
         (cond (= op :address)
               (recur (:address insn)
                      insns
@@ -403,7 +500,8 @@
              (let [effect (case (:op instruction)
                             :IDLE [[:running]
                                    (fn [] false)]
-                            :NOP []
+                            :LDN [[:D]
+                                  (fn [] (mem (R n)))]
                             :INC [[:R n]
                                   (fn [] (inc-16bit (R n)))]
                             :DEC [[:R n]
@@ -414,54 +512,17 @@
                                  (fn [] (short-branch page-address (= (D) 0) (R (P))))]
                             :BNZ [[:R (P)]
                                   (fn [] (short-branch page-address (not= (D) 0) (R (P))))]
-                            :LBR [[:R (P)]
-                                  (fn [] long-address)]
-                            :LSNZ [[:R (P)]
-                                   (fn [] (if (not= (D) 0)
-                                            (inc-16bit (inc-16bit (R (P))))
-                                            (R (P))))]
-                            :LDN [[:D]
-                                  (fn [] (mem (R n)))]
                             :LDA [[:D]
                                   (fn [] (mem (R n)))
                                   [:R n]
                                   (fn [] (inc-16bit (R n)))]
                             :STR [[:mem (R n)]
                                   (fn [] (mem-byte (D)))]
-                            :GLO [[:D]
-                                  (fn [] (get-lo (R n)))]
-                            :GHI [[:D]
-                                  (fn [] (get-hi (R n)))]
-                            :PLO [[:R n]
-                                  (fn [] (replace-lo (R n) (D)))]
-                            :PHI [[:R n]
-                                  (fn [] (replace-hi (R n) (D)))]
-                            :SEP [[:P]
-                                  (fn [] n)]
-                            :SEX [[:X]
-                                  (fn [] n)]
-                            :LDI [[:D]
-                                  (fn [] immediate)]
-                            :XOR [[:D]
-                                  (fn [] (bit-xor (D) (mem (R (X)))))]
-                            :OR [[:D]
-                                  (fn [] (bit-or (D) (mem (R (X)))))]
-                            :ADI [[:D]
-                                  (fn [] (bit-and 0xff (+ (D) immediate)))
-                                  [:DF]
-                                  (fn [] (if (> (+ (D) immediate) 0xff) 1 0))]
-                            :SMI [[:D]
-                                  (fn [] (bit-and 0xff (- (D) immediate)))
-                                  [:DF]
-                                  (fn [] (if (>= (D) immediate) 1 0))]
-                            :ORI [[:D]
-                                  (fn [] (bit-or (D) immediate))]
-                            :ANI [[:D]
-                                  (fn [] (bit-and (D) immediate))]
-                            :XRI [[:D]
-                                  (fn [] (bit-xor (D) immediate))]
-                            :RLDI [[:R n]
-                                   (fn [] long-immediate)]
+                            :RLXA [[:R n]
+                                   (fn [] (+ (* (mem (R (X))) 0x100)
+                                             (mem (inc-16bit (R (X))))))
+                                   [:R (X)]
+                                   (fn [] (inc-16bit (inc-16bit (R (X)))))]
                             :SCAL [[:mem (R (X))]
                                    (fn [] (mem-byte (get-lo (R n))))
                                    [:mem (dec-16bit (R (X)))]
@@ -479,23 +540,59 @@
                                              (mem (inc-16bit (inc-16bit (R (X)))))))
                                    [:R (X)]
                                    (fn [] (inc-16bit (inc-16bit (R (X)))))]
-                            :RLXA [[:R n]
-                                   (fn [] (+ (* (mem (R (X))) 0x100)
-                                             (mem (inc-16bit (R (X))))))
-                                   [:R (X)]
-                                   (fn [] (inc-16bit (inc-16bit (R (X)))))]
                             :RSXD [[:mem (R (X))]
                                    (fn [] (mem-byte (get-lo (R n))))
                                    [:mem (dec-16bit (R (X)))]
                                    (fn [] (mem-byte (get-hi (R n))))
                                    [:R (X)]
                                    (fn [] (dec-16bit (dec-16bit (R (X)))))]
+                            :RLDI [[:R n]
+                                   (fn [] long-immediate)]
+                            :GLO [[:D]
+                                  (fn [] (get-lo (R n)))]
+                            :GHI [[:D]
+                                  (fn [] (get-hi (R n)))]
+                            :PLO [[:R n]
+                                  (fn [] (replace-lo (R n) (D)))]
+                            :PHI [[:R n]
+                                  (fn [] (replace-hi (R n) (D)))]
+                            :LBR [[:R (P)]
+                                  (fn [] long-address)]
+                            :NOP []
+                            :LSNZ [[:R (P)]
+                                   (fn [] (if (not= (D) 0)
+                                            (inc-16bit (inc-16bit (R (P))))
+                                            (R (P))))]
+                            :SEP [[:P]
+                                  (fn [] n)]
+                            :SEX [[:X]
+                                  (fn [] n)]
+                            :OR [[:D]
+                                  (fn [] (bit-or (D) (mem (R (X)))))]
+                            :XOR [[:D]
+                                  (fn [] (bit-xor (D) (mem (R (X)))))]
+                            :LDI [[:D]
+                                  (fn [] immediate)]
+                            :ORI [[:D]
+                                  (fn [] (bit-or (D) immediate))]
+                            :ANI [[:D]
+                                  (fn [] (bit-and (D) immediate))]
+                            :XRI [[:D]
+                                  (fn [] (bit-xor (D) immediate))]
+                            :ADI [[:D]
+                                  (fn [] (bit-and 0xff (+ (D) immediate)))
+                                  [:DF]
+                                  (fn [] (if (> (+ (D) immediate) 0xff) 1 0))]
+                            :SMI [[:D]
+                                  (fn [] (bit-and 0xff (- (D) immediate)))
+                                  [:DF]
+                                  (fn [] (if (>= (D) immediate) 1 0))]
+                            :PRINTCHAR [[:writer]
+                                        (fn [] ((:writer processor) (char (D))))]
                             :READCHAR [[:D]
                                        (fn [] (let [[c r] ((:reader processor))] (int c)))
                                        [:reader]
                                        (fn [] (let [[c r] ((:reader processor))] r))]
-                            :PRINTCHAR [[:writer]
-                                        (fn [] ((:writer processor) (char (D))))]
 
                             ;; Just enough support for executing hex coded instructions
                             ;; to get the Lisp running.
