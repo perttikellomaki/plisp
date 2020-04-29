@@ -299,6 +299,15 @@
             :R [4]}
            changes))))
 
+(deftest test-ani
+  (let [changes
+        (run-prog
+         ["  LDI #12"
+          "  ANI #0f"])]
+    (is (= {:D 0x02
+            :R [4]}
+           changes))))
+
 (deftest test-xri
   (let [changes
         (run-prog

@@ -135,6 +135,7 @@
    (immediate-op "ADI" line)
    (immediate-op "SMI" line)
    (immediate-op "ORI" line)
+   (immediate-op "ANI" line)
    (immediate-op "XRI" line)
    (register-immediate-op "RLDI" line)
    (subroutine-call-op "SCAL" line)
@@ -455,6 +456,8 @@
                                   (fn [] (if (>= (D) immediate) 1 0))]
                             :ORI [[:D]
                                   (fn [] (bit-or (D) immediate))]
+                            :ANI [[:D]
+                                  (fn [] (bit-and (D) immediate))]
                             :XRI [[:D]
                                   (fn [] (bit-xor (D) immediate))]
                             :RLDI [[:R n]
