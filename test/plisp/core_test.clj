@@ -300,7 +300,13 @@
             :R [0x0007 0x0009]}
            changes))))
 
-;;; TODO: test-sex
+(deftest test-sex
+  (let [changes
+        (run-prog
+         ["  SEX 1"])]
+    (is (= {:X 1
+            :R [0x0001]}
+           changes))))
 
 (deftest test-or
   (let [changes
