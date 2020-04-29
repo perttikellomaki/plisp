@@ -114,6 +114,7 @@
    (no-operand-op "IDLE" line)
    (no-operand-op "NOP" line)
    (no-operand-op "XOR" line)
+   (no-operand-op "OR" line)
    (register-op "LDN" line)
    (register-op "INC" line)
    (register-op "DEC" line)
@@ -442,6 +443,8 @@
                                   (fn [] immediate)]
                             :XOR [[:D]
                                   (fn [] (bit-xor (D) (mem (R (X)))))]
+                            :OR [[:D]
+                                  (fn [] (bit-or (D) (mem (R (X)))))]
                             :ADI [[:D]
                                   (fn [] (bit-and 0xff (+ (D) immediate)))
                                   [:DF]

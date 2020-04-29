@@ -227,6 +227,21 @@
 
 ;;; TODO: test-sex
 
+(deftest test-or
+  (let [changes
+        (run-prog
+         ["  RLDI 1 #0100"
+          "  SEX 1"
+          "  LDI #0f"
+          "  STR 1"
+          "  LDI #f0"
+          "  OR"])]
+    (is (= {:D 0xff
+            :X 1
+            :R [0x000b 0x0100]
+            :mem {0x0100 {:op :byte, :value 0x0f}}}
+           changes))))
+
 (deftest test-xor
   (let [changes
         (run-prog
