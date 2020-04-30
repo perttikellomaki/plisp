@@ -521,11 +521,11 @@
                                   (fn [] (inc-16bit (R n)))]
                             :STR [[:mem (R n)]
                                   (fn [] (mem-byte (D)))]
-                            :RLXA [[:R n]
+                            :RLXA [[:R (X)]
+                                   (fn [] (inc-16bit (inc-16bit (R (X)))))
+                                   [:R n]
                                    (fn [] (+ (* (mem (R (X))) 0x100)
-                                             (mem (inc-16bit (R (X))))))
-                                   [:R (X)]
-                                   (fn [] (inc-16bit (inc-16bit (R (X)))))]
+                                             (mem (inc-16bit (R (X))))))]
                             :SCAL [[:mem (R (X))]
                                    (fn [] (mem-byte (get-lo (R n))))
                                    [:mem (dec-16bit (R (X)))]
