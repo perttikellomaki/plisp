@@ -223,6 +223,7 @@
    ;; 0xF3
    (no-operand-op "XOR" line)
    ;; 0xF4
+   (no-operand-op "ADD" line)
    ;; 0xF5
    ;; 0xF6
    ;; 0xF7
@@ -591,6 +592,10 @@
                                   (fn [] (bit-or (D) (mem (R (X)))))]
                             :XOR [[:D]
                                   (fn [] (bit-xor (D) (mem (R (X)))))]
+                            :ADD [[:D]
+                                  (fn [] (bit-and 0xff (+ (D) (mem (R (X))))))
+                                  [:DF]
+                                  (fn [] (if (> (+ (D) (mem (R (X)))) 0xff) 1 0))]
                             :LDI [[:D]
                                   (fn [] immediate)]
                             :ORI [[:D]

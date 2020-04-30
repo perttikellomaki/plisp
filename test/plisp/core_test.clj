@@ -377,6 +377,35 @@
             :mem {0x0100 {:op :byte, :value 0x0f}}}
            changes))))
 
+(deftest test-add
+  (let [changes
+        (run-prog
+         ["  RLDI 1 #0100"
+          "  SEX 1"
+          "  LDI #01"
+          "  STR 1"
+          "  LDI #02"
+          "  ADD"])]
+    (is (= {:D 0x03
+            :X 1
+            :R [0x000b 0x0100]
+            :mem {0x0100 {:op :byte, :value 0x01}}}
+           changes)))
+  (let [changes
+        (run-prog
+         ["  RLDI 1 #0100"
+          "  SEX 1"
+          "  LDI #ff"
+          "  STR 1"
+          "  LDI #02"
+          "  ADD"])]
+    (is (= {:D 0x01
+            :DF 1
+            :X 1
+            :R [0x000b 0x0100]
+            :mem {0x0100 {:op :byte, :value 0xff}}}
+           changes))))
+
 (deftest test-ldi
   (let [changes
         (run-prog
