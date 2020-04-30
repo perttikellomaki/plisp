@@ -181,6 +181,7 @@
    ;; 0x7A
    ;; 0x7B
    ;; 0x7C
+   (immediate-op "ADCI" line)
    ;; 0x7D
    ;; 0x7E
    ;; 0x7F
@@ -556,6 +557,10 @@
                                    (fn [] (mem-byte (D)))
                                    [:R (X)]
                                    (fn [] (dec-16bit (R (X))))]
+                            :ADCI [[:D]
+                                  (fn [] (bit-and 0xff (+ (D) (DF) immediate)))
+                                  [:DF]
+                                  (fn [] (if (> (+ (D) (DF) immediate) 0xff) 1 0))]
                             :SMBI [[:D]
                                    (fn [] (bit-and
                                            0xff

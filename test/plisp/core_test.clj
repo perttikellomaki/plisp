@@ -226,6 +226,31 @@
             :mem {0x0100 (mem-byte 0x34)}}
            changes))))
 
+(deftest test-adci
+  (let [changes
+        (run-prog
+         ;; calculate 0x0001 + 0x0002 to R1
+         ["  LDI #01"
+          "  ADI #02"
+          "  PLO 1"
+          "  LDI #00"
+          "  ADCI #00"
+          "  PHI 1"])]
+    (is (= {:R [0x000a 0x0003]}
+           changes)))
+  (let [changes
+        (run-prog
+         ;; calculate 0x00ff + 0x0002 to R1
+         ["  LDI #ff"
+          "  ADI #02"
+          "  PLO 1"
+          "  LDI #00"
+          "  ADCI #00"
+          "  PHI 1"])]
+    (is (= {:D 0x01
+            :R [0x000a 0x0101]}
+           changes))))
+
 (deftest test-smbi
   (let [changes
         (run-prog
