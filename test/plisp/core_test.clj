@@ -206,6 +206,16 @@
                   0xffff (mem-byte 0x34)}}
            changes))))
 
+(deftest test-rnx
+  (let [changes
+        (run-prog
+         ["  RLDI 1 #1234"
+          "  SEX 2"
+          "  RNX 1"])]
+    (is (= {:R [0x007 0x1234 0X1234]
+            :X 2}
+           changes))))
+
 (deftest test-rldi
   (let [changes
         (run-prog

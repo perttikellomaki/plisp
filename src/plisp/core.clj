@@ -158,6 +158,8 @@
    (extended-register-op "SRET" line)
    ;; 0x68 AN
    (extended-register-op "RSXD" line)
+   ;; 0x68 BN
+   (extended-register-op "RNX" line)
    ;; 0x68 CN
    (register-immediate-op "RLDI" line)
    ;; 0x69
@@ -552,6 +554,8 @@
                                    (fn [] (mem-byte (get-hi (R n))))
                                    [:R (X)]
                                    (fn [] (dec-16bit (dec-16bit (R (X)))))]
+                            :RNX [[:R (X)]
+                                  (fn [] (R n))]
                             :RLDI [[:R n]
                                    (fn [] long-immediate)]
                             :STXD [[:mem (R (X))]
