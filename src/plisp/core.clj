@@ -422,22 +422,23 @@
 
 (defn dump-processor
   "Dump processor state."
-  [previous processor]
-  (print (format "D: %02x  DF:%x  P: %x  X: %x\n"
-                 (:D processor)
-                 (:DF processor)
-                 (:P processor)
-                 (:X processor)))
-  (dotimes [n 4]
-    (print (format "R%x: %04x  R%x: %04x  R%x: %04x  R%x: %04x\n"
-                   n (get-in processor [:R n])
-                   (+ 4 n) (get-in processor [:R (+ 4 n)])
-                   (+ 8 n) (get-in processor [:R (+ 8 n)])
-                   (+ 12 n) (get-in processor [:R (+ 12 n)]))))
-  (let [[_ changes _]  (diff previous processor)]
-    (when (:mem changes)
-      (doseq [[addr val] (:mem changes)]
-        (print (format "mem %04x: %02x\n" addr (:value val)))))))
+  ([processor] (dump-processor processor processor))
+  ([previous processor]
+   (print (format "D: %02x  DF:%x  P: %x  X: %x\n"
+                  (:D processor)
+                  (:DF processor)
+                  (:P processor)
+                  (:X processor)))
+   (dotimes [n 4]
+     (print (format "R%x: %04x  R%x: %04x  R%x: %04x  R%x: %04x\n"
+                    n (get-in processor [:R n])
+                    (+ 4 n) (get-in processor [:R (+ 4 n)])
+                    (+ 8 n) (get-in processor [:R (+ 8 n)])
+                    (+ 12 n) (get-in processor [:R (+ 12 n)]))))
+   (let [[_ changes _]  (diff previous processor)]
+     (when (:mem changes)
+       (doseq [[addr val] (:mem changes)]
+         (print (format "mem %04x: %02x\n" addr (:value val))))))))
 
 (defn format-address
   "Format memory address and its contents."
