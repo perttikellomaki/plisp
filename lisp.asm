@@ -59,13 +59,26 @@
         BYTE #00
         BYTE #00
 
+7026:
+        BYTE #01                ; FREE CELLS
+        BYTE #00                ; todo: should be set by gc
+7028:
+        BYTE #82                ; LAST CELL USED + 04 (SEARCH START)
+        BYTE #FC                ; todo: should be set by gc
+
 702C:
         BYTE #2F                ; READ SPECIAL CHR
 
 ;;; ATOM BUFF
 7100:
         BYTE #71                ; 2 1ST BYTES = END OF LIB ADDR
-        BYTE #02
+        BYTE #06
+
+        BYTE #00                ; dummy addr
+        BYTE #00
+        BYTE #02                ; len + 1
+        STRING "x"              ; dummy atom
+        
         BYTE #FF
 
 
@@ -247,6 +260,108 @@
         ;; todo: continue with marking
         SRET 4
 
+;;; NEWNODE
+	
+6232:   
+	RSXD E                  ; SAVE REGS
+        RSXD F
+
+        RLDI 6 #7026            ; KENNOJA JÄLJELLÄ?
+        LDA 6
+        STR 2
+        LDA 6
+        OR
+        BNZ 53                  ; JOS ON, HAE
+
+        IDLE
+
+        ;; The following is extremely dubious. I don't know
+        ;; what my younger self was thinking. The datasheet gives
+        ;; the semantics of RLXA as:
+        ;;
+        ;; M(R(X)) -> R(N).1
+        ;; M(R(X)+1) -> R(N).0
+        ;; R(X)+2 -> R(X)
+        ;;
+        ;; However, it is silent about what happens if R(X) and R(N)
+        ;; are the same register. Presumably it works on real hardware,
+        ;; but there was really no need to do it. I could have just as
+        ;; well used RF instead of R6.
+6253:
+        SEX 6                   ; HAE SEARCH START
+        RLXA 6
+
+        INC 6
+        LDA 6
+        INC 6
+        INC 6                   ; KENNO VAPAA?
+        ANI #01                 ; JOS ON, KÄYTÄ
+        BNZ 60
+        BR 56
+
+6260:
+        RLDI F #7029            ; RF OS SEARCH START
+
+        SEX F                   ; VIE UUSI
+        RSXD 6
+
+        LDN F                   ; JA VÄHENNÄ KENNO
+        SMI #01
+        STXD
+        LDN F
+        SMBI #00
+        STXD
+        DEC 6
+
+        SEX 2                   ; PALUU
+        INC 2
+        RLXA F
+        RLXA E
+        DEC 2
+        SRET 4
+
+;;; MAKELIST
+
+629F:
+        GHI E                   ; #ELS=0 ?
+        BNZ AB
+        GLO E
+        BNZ AB
+
+        LDI #00                 ; JOS ON, RET NIL
+        PHI 6
+        PLO 6
+        SRET 4
+
+        DEC E                   ; JOS EI, REKURSIO
+        SCAL 4 629F
+
+        GHI 6                   ; CDR PINOON
+        STR 7
+        INC 7
+        GLO 6
+        STR 7
+        INC 7
+62B6:
+        SCAL 4 6232             ; NEWNODE
+
+        DEC 7
+        LDN 7
+        PLO E
+        DEC 7
+        LDN 7
+        PHI E
+
+        GHI 8                   ; ERROR ?
+        BNZ A5                  ; JOS ON, RET NIL
+
+        SEX 6                   ; VIE CAR & CDR
+        RSXD E                  ; UUTEEN KENNOON
+        RSXD E
+        SEX 2
+        INC 6
+        SRET 4
+	
 ;;; KILLSPACES
 
 62D8:
@@ -354,7 +469,7 @@
         BR 35
 6359:
         XOR                     ; PALAUTA MERKKI
-        XRI #35                 ; > ?
+        XRI #3E                 ; > ?
         BZ 6E
         XRI #02                 ; TAI < ?
         BZ 6E
@@ -377,7 +492,94 @@
         DEC 2
         
 
-	IDLE
+        NOP                     ; TODO: call numconv
+        NOP
+        NOP
+        NOP
+
+        RLDI A #7102            ; RA = STRING START
+        SEX A
+        INC B
+
+        LDN A                   ; KIRJASTO LOPPU?
+        XRI #FF
+        BZ AC                   ; JOS ON, TEE UUSI ATOMI
+
+        RLXA 6                  ; R6 = ATOMIN OS.
+6389:
+        GLO A                   ; RD OS. SEUR. ATOMI
+        ADD
+        PLO D
+        GHI A
+        ADCI #00
+        PHI D
+
+        GLO B                   ; PITUUS SAMA?
+        XOR
+        BNZ A5                  ; EI -> SEUR. ATOMI
+
+        GHI E                   ; RC OS. NIMEÄ
+        PHI C
+        GLO E
+        PLO C
+        GLO B                   ; R8.0 = COUNT
+        PLO 8
+
+        DEC 8                   ; KAIKKI KIRJAIMET VERRATTU?
+        GLO 8
+        BZ A9                   ; ON -> ATOMI LÖYTYI
+639E:
+        INC A                   ; VERTAA
+        LDA C
+        XOR
+        BNZ A5                  ; JOS EI SAMA, SIIRRY SEUR. ATOMIIN
+        BR 9A
+
+        RNX D                   ; SIIRRY SEUR. ATOMIIN
+        BR 82
+
+        SEX 2                   ; PALAA & PÄIVITÄ READ PTR
+        BR 15
+
+63AC:
+        SEX 2
+        RLDI E #0002            ; TEE UUSI ATOMI
+        SCAL 4 629F
+
+63B5:   
+        GHI 8                   ; ERR?
+        BNZ 3D                  ; JOS ON, RET NIL
+
+        INC D
+        INC D
+        SEX D
+        GLO B
+        STR D                   ; VIE PITUUS
+
+        GLO D                   ; RC = END LIB
+        ADD
+        PLO C
+        GHI D
+        ADCI #00
+        PHI C
+
+        DEC D                   ; VIE ATOMIN OSOITE
+        RSXD 6
+
+        RLDI D #7101            ; RD OS END LIB
+63CB:
+        RSXD C                  ; VIE UUSI END LIB
+
+        SEX 6                   ; JA TEE ATOMI
+        LDI #00
+        STR 6
+        INC 6
+        LDI #0C
+        STR 6
+        DEC 6
+
+        SEX 2                   ; JA PALAA
+        BR 15
 
 ;;; LISTREAD
 
