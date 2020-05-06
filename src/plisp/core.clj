@@ -444,16 +444,15 @@
 
 (defn format-address
   "Format memory address and its contents."
-  [[addr val]]
+  [addr val]
   (str (format "%04x: " addr) (format-instruction val)))
 
 (defn lst
   "List memory contents."
   ([memory] (lst memory 0x0000 0xffff))
   ([memory start end]
-   (map format-address
-        (filter (fn [[addr val]] (<= start addr end))
-                (sort memory)))))
+   (map (fn [addr] (format-address addr (get-in memory [addr])))
+        (range start (+ end 1)))))
 
 ;;;
 ;;; The processor simulator proper.
@@ -487,9 +486,9 @@
      (let [addr (get-in initial-processor [:R (:P initial-processor)])
            [instruction processor] (instruction-fetch initial-processor)]
        (when (some #{:instruction} trace-options)
-         (println (format-address [addr instruction])))
+         (println (format-address addr instruction)))
        (when (at-trace-point? addr)
-         (println (format-address [addr instruction])))
+         (println (format-address addr instruction)))
        (when instruction
          (letfn
              [(P [] (:P processor))
