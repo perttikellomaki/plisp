@@ -1,8 +1,7 @@
 (ns plisp.core-test
   (:require [clojure.test :refer :all]
+            [clojure.data :refer :all]
             [plisp.core :refer :all]))
-
-(use 'clojure.data)
 
 (defn initial-processor [instructions]
   (reset (layout (map parse-line instructions))))
