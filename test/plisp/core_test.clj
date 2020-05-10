@@ -519,7 +519,12 @@
     (is (= {:R [0x1234]}
            changes))))
 
-(deftest test-lisp
+(deftest test-lisp-nil
   (let [final-state (first (run (reader "()\r")))]
     (is (= " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-NIL"
+           ((:writer final-state))))))
+
+(deftest test-lisp-eval-exit
+  (let [final-state (first (run (reader "exit \r")))]
+    (is (= " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-*ml-function"
            ((:writer final-state))))))

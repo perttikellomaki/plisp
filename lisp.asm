@@ -70,19 +70,40 @@
         BYTE #2F                ; READ SPECIAL CHR
 
 ;;; ATOM BUFF
+;;; There is no surviving documentation, so this is a modern
+;;; reconstruction.
+
 7100:
         BYTE #71                ; 2 1ST BYTES = END OF LIB ADDR
-        BYTE #06
+        BYTE #09
 
-        BYTE #00                ; dummy addr
+        BYTE #80
         BYTE #00
-        BYTE #02                ; len + 1
-        STRING "x"              ; dummy atom
+        BYTE #05
+        STRING "exit"
         
         BYTE #FF
 
+;;; The memory map indicates that cells for Lisp built ins
+;;; are stored in a separate area.
+;;; There is no surviving documentation, so this is a modern
+;;; reconstruction.
 
-        ;; LISP-TULKKI
+8000:
+        BYTE #00                ; 0x000c indicates an atom
+        BYTE #0C
+        BYTE #80
+        BYTE #04
+        BYTE #80                ; value
+        BYTE #08
+        BYTE #00                ; property list
+        BYTE #00
+        BYTE #00                ; 0x0010 indicates ml function
+        BYTE #10
+        BYTE #E8                ; Address of exit
+        BYTE #00
+
+;;; LISP-TULKKI
 
 6000:   
         LDI #60                 ; P=3
@@ -622,6 +643,31 @@
         BYTE #00
         SRET 4
 
+645A:
+        LDA 6                   ; ATOMI ?
+        BNZ A5                  ; JOS EI, PRINTTAA LISTA
+
+        LDN 6                   ; CAR = T OR CAR = NIL
+        BZ A5                   ; -> PRINT LISTA
+        SMI #04
+        BZ A5
+
+        SMI #04                 ; NUMERO ?
+        NOP                     ; original: LBZ
+        NOP
+        NOP
+
+        SMI #04                 ; TUNNUS ?
+        BNZ FB
+
+;;; The addresses are a bit messed up in the original,
+;;; but this is clearly the intent.
+64FB:
+        SCAL 4 60D1             ; ML-FN
+        STRING "*ml-function"
+        BYTE #00
+        SRET 4
+
 ;;; EVAL
 
 6511:
@@ -642,8 +688,38 @@
 
         GHI 6                   ; T OR NIL?
         BZ 8E                   ; ON -> RET
+6524:   
+        LDA 6                   ; ATOMI ?
+        BNZ 57                  ; EI -> EVALLIST
 
-        IDLE
+        LDN 6                   ; LISTA, CAR = NIL OR T ?
+        BZ 2E
+        SMI #04
+        BNZ 33
+
+        LDI #09                 ; JOS ON, ANNA ERR
+        PHI 8
+        BR 99
+
+        DEC 6
+        SMI #04                 ; NUMERO -> RETURN
+        BZ 8E
+
+        SMI #04                 ; TUNNUS
+653A:
+        BNZ 4A                  ; EI -> YLI
+
+        INC 6
+        INC 6
+        SEX 6
+        RLXA 6
+        RLXA 6
+        SEX 2
+        GLO 6
+        ANI #FC
+        PLO 6
+        BR 8E                   ; JA POIS
+
 
 658E:
         INC 2                   ; JOS EI, PALAA
@@ -660,6 +736,12 @@ E72F:
 E731:
         PRINTCHAR
         SRET 4
+
+;;; The value of the symbol exit points here.
+;;; This is not original code, but useful for testing.
+        
+E800:
+        IDLE
 
 ;;; The call to this address expects to get a line of input in the
 ;;; read buffer in work page. The code here approximates what would
