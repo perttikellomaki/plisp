@@ -640,11 +640,13 @@
   ([reader] (run reader {}))
   ([reader options]
    (let [trace-options (:trace-options options)
+         at-snapshot-addr? (set (:snapshots options))
          hooks {:memory-fetch-hook
                 (fn [addr value]
                   (when (some #{:memory} trace-options)
                     (println (format "%04x: %02x" addr value))))}]
-     (loop [processor (reset (prog) 0x6000 reader)]
+     (loop [processor (reset (prog) 0x6000 reader)
+            snapshots []]
        (let [addr (get-in processor [:R (:P processor)])
              [instruction _] (instruction-fetch processor)]
          (when (some #{:processor} trace-options)
@@ -655,5 +657,8 @@
            (println (format-address addr instruction)))
          (let [next (next-state processor hooks)]
            (if (:running next)
-             (recur next)
-             next)))))))
+             (recur next
+                    (if (at-snapshot-addr? addr)
+                      (conj snapshots processor)
+                      snapshots))
+             (conj snapshots processor))))))))
