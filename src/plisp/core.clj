@@ -289,21 +289,8 @@
 
 
 ;;;
-;;; Default reader and writer.
+;;; Default reader.
 ;;;
-
-(defn writer-impl [cumul]
-  (fn
-    ([] (clojure.string/join cumul))
-    ([c]
-     (print c)
-     (writer-impl (conj cumul c)))))
-
-(defn default-writer
-  "The default writer writes one character to stdout and returns a new writer.
-  Without argument dumps a string containing all characters written so far."
-  []
-  (writer-impl []))
 
 (defn reader-impl [chars]
   (fn [] (let [[c & cs] chars] [c (reader-impl cs)])))
@@ -314,13 +301,15 @@
 ;;;
 ;;; The processor state.
 ;;;
+;;; Output is modeled with :outchar, which contains an output character
+;;; after a PRINTCHAR pseudo instruction, and nil otherwise.
+;;;
 
 (defn reset
   "Initial state of the processor. Optionally with starting address in R0."
   ([prog] (reset prog 0x0000))
-  ([prog start-addr] (reset prog start-addr (reader "") (default-writer)))
-  ([prog start-addr reader] (reset prog start-addr reader (default-writer)))
-  ([prog start-addr reader writer]
+  ([prog start-addr] (reset prog start-addr (reader "")))
+  ([prog start-addr reader]
    {:D 0x00
     :DF 0
     :P 0x0
@@ -328,7 +317,7 @@
     :R [start-addr 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000 0X0000]
     :mem prog
     :reader reader
-    :writer writer
+    :outchar nil
     :running true
     }))
 
@@ -603,8 +592,8 @@
                                 (fn [] (bit-and 0xff (- (D) immediate)))
                                 [:DF]
                                 (fn [] (if (>= (D) immediate) 1 0))]
-                          :PRINTCHAR [[:writer]
-                                      (fn [] ((:writer processor) (char (D))))]
+                          :PRINTCHAR [[:outchar]
+                                      (fn [] (char (D)))]
                           :READCHAR [[:D]
                                      (fn [] (let [[c r] ((:reader processor))] (int c)))
                                      [:reader]
@@ -620,45 +609,26 @@
                                      (R (P)))) ; silent NOP
                                  ]
                           )
-                 final-state (when effect (execute-instruction processor effect))]
+                 final-state (when effect
+                               (let [next (execute-instruction processor effect)]
+                                 ;; clear outchar if instruction not PRINTCHAR
+                                 (if (= (:op instruction) :PRINTCHAR)
+                                   next
+                                   (assoc-in next [:outchar] nil))))]
              final-state)))))))
+
+;;;
+;;; An execution is a potentially infinite sequence of processor states.
+;;;
+
+(defn execution [prog reader]
+  (iterate next-state (reset prog 0x6000 reader)))
 
 ;;;
 ;;; Run Lisp.
 ;;;
 
-(defn at-trace-point? [addr options]
-  (some (fn [a]
-          (or (= addr a)
-              (and (vector? a)
-                   (let [[start end] a]
-                     (<= start addr end)))))
-        (:trace-points options)))
-
-(defn run
-  ([] (run (reader "")))
-  ([reader] (run reader {}))
-  ([reader options]
-   (let [trace-options (:trace-options options)
-         at-snapshot-addr? (set (:snapshots options))
-         hooks {:memory-fetch-hook
-                (fn [addr value]
-                  (when (some #{:memory} trace-options)
-                    (println (format "%04x: %02x" addr value))))}]
-     (loop [processor (reset (prog) 0x6000 reader)
-            snapshots []]
-       (let [addr (get-in processor [:R (:P processor)])
-             [instruction _] (instruction-fetch processor)]
-         (when (some #{:processor} trace-options)
-           (dump-processor processor processor))
-         (when (some #{:instruction} trace-options)
-           (println (format-address addr instruction)))
-         (when (at-trace-point? addr options)
-           (println (format-address addr instruction)))
-         (let [next (next-state processor hooks)]
-           (if (:running next)
-             (recur next
-                    (if (at-snapshot-addr? addr)
-                      (conj snapshots processor)
-                      snapshots))
-             (conj snapshots processor))))))))
+(defn run-lisp [input]
+  (apply str
+         (->> (take-while :running (execution (prog) (reader input)))
+              (map :outchar))))
