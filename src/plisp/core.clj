@@ -384,59 +384,6 @@
     pc))
 
 ;;;
-;;; Dumping of instructions and processor state.
-;;;
-
-(defn format-instruction
-  "Format a single instruction."
-  [instruction]
-  (str
-   (:op instruction)
-   (when (:n instruction) (format " %x" (:n instruction)))
-   (when (:immediate instruction) (format " #%02x" (:immediate instruction)))
-   (when (:long-immediate instruction) (format " #%04x" (:long-immediate instruction)))
-   (when (:page-address instruction) (format " %02x" (:page-address instruction)))
-   (when (:long-address instruction) (format " %04x" (:long-address instruction)))
-   (when (:value instruction) (format " %02x %s" (:value instruction) (char (:value instruction))))))
-
-(defn dump-instruction
-  "Dump a single instruction."
-  [instruction]
-  (println (format-instruction instruction)))
-
-(defn dump-processor
-  "Dump processor state."
-  ([processor] (dump-processor processor processor))
-  ([previous processor]
-   (print (format "D: %02x  DF:%x  P: %x  X: %x\n"
-                  (:D processor)
-                  (:DF processor)
-                  (:P processor)
-                  (:X processor)))
-   (dotimes [n 4]
-     (print (format "R%x: %04x  R%x: %04x  R%x: %04x  R%x: %04x\n"
-                    n (get-in processor [:R n])
-                    (+ 4 n) (get-in processor [:R (+ 4 n)])
-                    (+ 8 n) (get-in processor [:R (+ 8 n)])
-                    (+ 12 n) (get-in processor [:R (+ 12 n)]))))
-   (let [[_ changes _]  (diff previous processor)]
-     (when (:mem changes)
-       (doseq [[addr val] (:mem changes)]
-         (print (format "mem %04x: %02x\n" addr (:value val))))))))
-
-(defn format-address
-  "Format memory address and its contents."
-  [addr val]
-  (str (format "%04x: " addr) (format-instruction val)))
-
-(defn lst
-  "List memory contents."
-  ([memory] (lst memory 0x0000 0xffff))
-  ([memory start end]
-   (map (fn [addr] (format-address addr (get-in memory [addr])))
-        (range start (+ end 1)))))
-
-;;;
 ;;; The processor simulator proper.
 ;;; Each instruction is described as a list of effects on processor state.
 ;;; Each effect consists of a sequence of keys which specifies a location
@@ -456,8 +403,7 @@
 
 (defn next-state
   "Return the next state of the processor after executing one instruction."
-  ([initial-processor] (next-state initial-processor {}))
-  ([initial-processor hooks]
+  ([initial-processor]
    (let [addr (get-in initial-processor [:R (:P initial-processor)])
          [instruction processor] (instruction-fetch initial-processor)]
      (when instruction
@@ -466,13 +412,10 @@
             (X [] (:X processor))
             (D [] (:D processor))
             (DF [] (:DF processor))
-            (mem [addr]
+            (mem [addr] 
               ;; assume uninitialized memory is zeroed out
-              (let [value (or (:value (get-in processor [:mem addr]))
-                              0x00)]
-                (if-let [hook (:memory-fetch-hook hooks)]
-                  (hook addr value))
-                value))
+              (or (:value (get-in processor [:mem addr]))
+                  0x00))
             (R [n] (get-in processor [:R n]))]
          (let [{:keys [n immediate long-immediate page-address long-address]} instruction]
            (let [effect (case (:op instruction)
@@ -632,3 +575,76 @@
   (apply str
          (->> (take-while :running (execution (prog) (reader input)))
               (map :outchar))))
+
+;;;
+;;; Dumping of instructions and processor state.
+;;;
+
+(defn format-instruction
+  "Format a single instruction."
+  [instruction]
+  (str
+   (:op instruction)
+   (when (:n instruction) (format " %x" (:n instruction)))
+   (when (:immediate instruction) (format " #%02x" (:immediate instruction)))
+   (when (:long-immediate instruction) (format " #%04x" (:long-immediate instruction)))
+   (when (:page-address instruction) (format " %02x" (:page-address instruction)))
+   (when (:long-address instruction) (format " %04x" (:long-address instruction)))
+   (when (:value instruction) (format " %02x %s" (:value instruction) (char (:value instruction))))))
+
+(defn dump-instruction
+  "Dump a single instruction."
+  [instruction]
+  (println (format-instruction instruction)))
+
+(defn dump-processor
+  "Dump processor state."
+  ([processor] (dump-processor processor processor))
+  ([previous processor]
+   (print (format "D: %02x  DF:%x  P: %x  X: %x\n"
+                  (:D processor)
+                  (:DF processor)
+                  (:P processor)
+                  (:X processor)))
+   (dotimes [n 4]
+     (print (format "R%x: %04x  R%x: %04x  R%x: %04x  R%x: %04x\n"
+                    n (get-in processor [:R n])
+                    (+ 4 n) (get-in processor [:R (+ 4 n)])
+                    (+ 8 n) (get-in processor [:R (+ 8 n)])
+                    (+ 12 n) (get-in processor [:R (+ 12 n)]))))
+   (let [[_ changes _]  (diff previous processor)]
+     (when (:mem changes)
+       (doseq [[addr val] (:mem changes)]
+         (print (format "mem %04x: %02x\n" addr (:value val))))))))
+
+(defn format-address
+  "Format memory address and its contents."
+  [addr val]
+  (str (format "%04x: " addr) (format-instruction val)))
+
+(defn lst
+  "List memory contents."
+  ([start end execution]
+   (let [memory (:mem (first execution))]
+     (map (fn [addr] (format-address addr (get-in memory [addr])))
+          (range start (+ end 1))))))
+
+;;;
+;;; Debug utilities.
+;;;
+
+(defn debug-lisp [input]
+  (execution (prog) (reader input)))
+
+(defn break-at [addr execution]
+  (drop-while (fn [processor]
+                (not= (get-in processor [:R (:P processor)])
+                      addr))
+              execution))
+
+(defn trace [count execution]
+  (doseq [processor (take count execution)]
+    (dump-instruction
+     (get-in processor
+             [:mem (get-in processor [:R (:P processor)])]))
+    (dump-processor processor (next-state processor))))
