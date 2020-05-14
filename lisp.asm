@@ -63,8 +63,8 @@
         BYTE #01                ; FREE CELLS
         BYTE #00                ; todo: should be set by gc
 7028:
-        BYTE #82                ; LAST CELL USED + 04 (SEARCH START)
-        BYTE #FC                ; todo: should be set by gc
+        BYTE #83                ; LAST CELL USED + 04 (SEARCH START)
+        BYTE #00                ; todo: should be set by gc
 
 702C:
         BYTE #2F                ; READ SPECIAL CHR
@@ -296,8 +296,7 @@
 
         IDLE
 
-        ;; The following is extremely dubious. I don't know
-        ;; what my younger self was thinking. The datasheet gives
+        ;; The following is somewhat suspect. The datasheet gives
         ;; the semantics of RLXA as:
         ;;
         ;; M(R(X)) -> R(N).1
@@ -306,8 +305,8 @@
         ;;
         ;; However, it is silent about what happens if R(X) and R(N)
         ;; are the same register. Presumably it works on real hardware,
-        ;; but there was really no need to do it. I could have just as
-        ;; well used RF instead of R6.
+        ;; and when it works it is an efficient way to follow a chain
+        ;; of indirections.
 6253:
         SEX 6                   ; HAE SEARCH START
         RLXA 6
@@ -615,6 +614,49 @@
         INC F                   ; JOS ON, RET NIL
         LBR 6417
 
+	SMI #15                 ; > ?
+        BZ E4                   ; JOS ON, RET NIL
+
+        SCAL 4 62F6             ; CALL READ
+
+        GHI 6                   ; CAR TALTEEN
+        STR 7
+        INC 7
+        GLO 6
+        STR 7
+        INC 7
+63F5:
+        SCAL 4 63DA             ; CALL LISTREAD
+
+        GHI 6                   ; CDR TALTEEN
+        STR 7
+        INC 7
+        GLO 6
+        STR 7
+        INC 7
+
+        SCAL 4 6232             ; NEWNODE
+
+        GHI 8                   ; ERR?
+        BNZ 17                  ; JOS ON, RET NIL
+
+        SEX 6                   ; VIE CAR & CDR
+        DEC 7
+        LDN 7
+        STXD
+        DEC 7
+        LDN 7
+        STXD
+640D:
+        DEC 7
+        LDN 7
+        STXD
+        DEC 7
+        LDN 7
+        STR 6
+        SEX 2
+        LBR 6315
+
 ;;; NILRET
 
 6417:
@@ -720,11 +762,92 @@
         PLO 6
         BR 8E                   ; JA POIS
 
+        SMI #04                 ; ML-FN ?
+        BNZ 53
+
+        INC 6                   ; KÄYNNISTÄ
+        INC 6
+        SEP 5
+        BR 8E
+
+6553:
+        LDI #10                 ; ERR 10: ILLEGAL ATOM
+        BR 30
+
+        DEC 6                   ; EVALLIST
+        SEX 6
+        RLXA F                  ; GET CAR
+        SEX 2
+        RSXD F                  ; AND SAVE
+        SEX 6
+        RLXA F                  ; GET CDR
+        SEX 2                   ; AND PUSH IT TO ARGSTACK
+        GHI F
+        STR 7
+        INC 7
+        GLO F
+        STR 7
+        INC 7
+
+        INC 2                   ; GET CAR
+        RLXA 6
+        DEC 2
+656C:
+        SCAL 4 6511             ; EVAL
+
+        GHI 6                   ; T OR NIL?
+        BZ 7D                   ; JOS ON -> ERR
+        LDN 6                   ; TULOS ATOMI?
+        BNZ 81                  ; EI -> JATKA
+        INC 6
+        LDN 6
+        DEC 6
+        SMI #10                 ; ML-FN?
+        BZ 81                   ; ON -> JATKA
+
+        DEC 7                   ; ERROR
+        DEC 7
+        BR ED
+
+        SCAL 4 6511             ; EVAL LOPPUTULOS
+
+        DEC 7                   ; RETURN ARGSTACK
+        DEC 7
+
+        NOP                     ; BREAK?    original: SCAL 4 7006
+        NOP
+        NOP
+        NOP
+
+        GHI 8                   ; ERROR?
+        BNZ 92                  ; JOS ON, ANNA MESS.
 
 658E:
         INC 2                   ; JOS EI, PALAA
         INC 2
         SRET 4
+
+        GHI 8                   ; JOS ERROR = Fx, EI PRINTATA
+        ANI #F0
+        XRI #F0
+6597:
+        BZ 8E
+
+        IDLE
+
+        
+;;; ML-FN CALL
+
+65F2:
+        SEP 3
+        RSXD 4                  ; ENTRY
+        SEX 4
+        RNX 3
+        SEX 6
+        RLXA 3
+        SEX 2
+        BR F2
+
 
 ;;; The code has references to I/O code at E9 and E7 pages.
 ;;; This does not show up in the memory map and there is no
