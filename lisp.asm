@@ -75,23 +75,19 @@
 
 7100:
         BYTE #71                ; 2 1ST BYTES = END OF LIB ADDR
-        BYTE #13
+        BYTE #0C
 
-        BYTE #80
+7102:   
         BYTE #00
-        BYTE #05
-        STRING "EXIT"
-7109:   
-        BYTE #80
-        BYTE #0c
+        BYTE #00
         BYTE #04
         STRING "NIL"
-710F:
-        BYTE #80
-        BYTE #14
+7108:
+        BYTE #00
+        BYTE #04
         BYTE #02
         STRING "T"
-7113:   
+710C:   
         BYTE #FF
 
 ;;; The memory map indicates that cells for Lisp built ins
@@ -100,37 +96,6 @@
 ;;; reconstruction.
 
 8000:
-        BYTE #00                ; atom "EXIT"
-        BYTE #0C                ; 0x000c indicates an atom
-        BYTE #80
-        BYTE #04
-        BYTE #80                ; value
-        BYTE #08
-        BYTE #00                ; property list
-        BYTE #00
-        BYTE #00                ; 0x0010 indicates ml function
-        BYTE #10
-        BYTE #E8                ; Address of exit
-        BYTE #00
-800C:   
-	BYTE #00                ; atom "NIL"
-        BYTE #0C                ; 0x000c indicates an atom
-        BYTE #80
-        BYTE #10
-        BYTE #00                ; value
-        BYTE #00
-        BYTE #00                ; property list
-        BYTE #00
-8014:
-	BYTE #00                ; atom "T"
-        BYTE #0C                ; 0x000c indicates an atom
-        BYTE #80
-        BYTE #18
-        BYTE #00                ; value
-        BYTE #04
-        BYTE #00                ; property list
-        BYTE #00
-801C:
 
 
 ;;; LISP-TULKKI
@@ -251,7 +216,7 @@
 
         SCAL 4 6442             ; PRINT (original calls 62ec but the is clearly a typo)
 
-        IDLE                    ; Not in original code, here to stop processor simulation.
+        BR B8
 	
 ;;; PROMPT
 
@@ -888,13 +853,7 @@ E731:
         PRINTCHAR
         SRET 4
 
-;;; The value of the symbol exit points here.
-;;; This is not original code, but useful for testing.
-        
-E800:
-        IDLE
-
-;;; The call to this address expects to get a line of input in the
+;;; The call to this address expects to get a line of input into the
 ;;; read buffer in work page. The code here approximates what would
 ;;; have been in the original.
         
@@ -907,11 +866,21 @@ E906:
         READCHAR
         STR F
         XRI #0D                 ; a carriage return ends line
-        BZ 19
+        BZ 1F
+
+        LDN F
+        XRI #04                 ; control-d ends input
+        BNZ 1A
+
+        IDLE                    ; stop the processor
+        
         GLO F
-        XRI #FF                 ; forced end of line if at end of buffer
+        XRI #FE                 ; forced end of line if at end of buffer
         BNZ 0D
 
+	LDI #20                 ; turn the carriage return into a space
+        STR F
+        INC F
         LDI #00                 ; mark end of line with #00
         STR F
         SRET 4

@@ -573,7 +573,7 @@
 
 (defn run-lisp [input]
   (apply str
-         (->> (take-while :running (execution (prog) (reader input)))
+         (->> (take-while :running (execution (prog) (reader (str input "\r\004"))))
               (map :outchar))))
 
 ;;;
@@ -634,7 +634,7 @@
 ;;;
 
 (defn debug-lisp [input]
-  (execution (prog) (reader input)))
+  (execution (prog) (reader (str input "\r\004"))))
 
 (defn break-at [addr execution]
   (drop-while (fn [processor]
