@@ -75,13 +75,23 @@
 
 7100:
         BYTE #71                ; 2 1ST BYTES = END OF LIB ADDR
-        BYTE #09
+        BYTE #13
 
         BYTE #80
         BYTE #00
         BYTE #05
         STRING "EXIT"
-        
+7109:   
+        BYTE #80
+        BYTE #0c
+        BYTE #04
+        STRING "NIL"
+710F:
+        BYTE #80
+        BYTE #14
+        BYTE #02
+        STRING "T"
+7113:   
         BYTE #FF
 
 ;;; The memory map indicates that cells for Lisp built ins
@@ -102,6 +112,26 @@
         BYTE #10
         BYTE #E8                ; Address of exit
         BYTE #00
+800C:   
+	BYTE #00                ; atom "NIL"
+        BYTE #0C                ; 0x000c indicates an atom
+        BYTE #80
+        BYTE #10
+        BYTE #00                ; value
+        BYTE #00
+        BYTE #00                ; property list
+        BYTE #00
+8014:
+	BYTE #00                ; atom "T"
+        BYTE #0C                ; 0x000c indicates an atom
+        BYTE #80
+        BYTE #18
+        BYTE #00                ; value
+        BYTE #04
+        BYTE #00                ; property list
+        BYTE #00
+801C:
+
 
 ;;; LISP-TULKKI
 
