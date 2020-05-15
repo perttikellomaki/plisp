@@ -524,5 +524,5 @@
          " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-NIL")))
 
 (deftest test-lisp-eval-exit
-  (is (= (run-lisp "exit \r")
+  (is (= (run-lisp "EXIT \r")
          " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-*ml-function")))

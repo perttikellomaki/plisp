@@ -80,7 +80,7 @@
         BYTE #80
         BYTE #00
         BYTE #05
-        STRING "exit"
+        STRING "EXIT"
         
         BYTE #FF
 
@@ -90,8 +90,8 @@
 ;;; reconstruction.
 
 8000:
-        BYTE #00                ; 0x000c indicates an atom
-        BYTE #0C
+        BYTE #00                ; atom "EXIT"
+        BYTE #0C                ; 0x000c indicates an atom
         BYTE #80
         BYTE #04
         BYTE #80                ; value
@@ -674,14 +674,12 @@
         BNZ 52
 
         SCAL 4 60D1
-        BYTE #4E                ; N
-        BYTE #49                ; I
-        BYTE #4C                ; L
+	STRING "NIL"
         BYTE #00
         SRET 4
 6452:
         SCAL 4 60D1
-        BYTE #54                ; T
+        STRING "T"
         BYTE #00
         SRET 4
 
