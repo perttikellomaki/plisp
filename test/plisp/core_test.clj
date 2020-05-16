@@ -530,3 +530,8 @@
 (deftest test-lisp-atom-t
   (is (= (run-lisp "T")
          " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-T\r\n-")))
+
+(deftest test-lisp-nil-t-nil
+  (is (= (run-lisp "()\rT\r()")
+         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-NIL\r\n-T\r\n-NIL\r\n-"
+         )))
