@@ -594,8 +594,13 @@
 
 (defn dump-instruction
   "Dump a single instruction."
-  [instruction]
-  (println (format-instruction instruction)))
+  [processor]
+  (let [pc (get-in processor [:R (:P processor)])
+        instruction
+        (get-in processor
+                [:mem pc])]
+  (println (format "%04x: " pc)
+           (format-instruction instruction))))
 
 (defn dump-processor
   "Dump processor state."
@@ -644,7 +649,5 @@
 
 (defn trace [count execution]
   (doseq [processor (take count execution)]
-    (dump-instruction
-     (get-in processor
-             [:mem (get-in processor [:R (:P processor)])]))
+    (dump-instruction processor)
     (dump-processor processor (next-state processor))))
