@@ -535,3 +535,23 @@
   (is (= (run-lisp "()\rT\r()")
          " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-NIL\r\n-T\r\n-NIL\r\n-"
          )))
+
+(deftest test-lisp-cons1
+  (is (= (run-lisp "(CONS T NIL)")
+         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-(T)\r\n-"
+         )))
+
+(deftest test-lisp-cons2
+  (is (= (run-lisp "(CONS T (CONS NIL NIL))")
+         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-(T NIL)\r\n-"
+         )))
+
+(deftest test-lisp-cons3
+  (is (= (run-lisp "(CONS (CONS T NIL) (CONS NIL NIL))")
+         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-((T) NIL)\r\n-"
+         )))
+
+(deftest test-lisp-cons4
+  (is (= (run-lisp "(CONS (CONS T T) (CONS NIL NIL))")
+         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-((T . T) NIL)\r\n-"
+         )))

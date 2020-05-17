@@ -75,7 +75,7 @@
 
 7100:
         BYTE #71                ; 2 1ST BYTES = END OF LIB ADDR
-        BYTE #0C
+        BYTE #13
 
 7102:   
         BYTE #00
@@ -87,7 +87,12 @@
         BYTE #04
         BYTE #02
         STRING "T"
-710C:   
+710C:
+        BYTE #80
+        BYTE #00
+        BYTE #05
+        STRING "CONS"
+7113:   
         BYTE #FF
 
 ;;; The memory map indicates that cells for Lisp built ins
@@ -96,6 +101,20 @@
 ;;; reconstruction.
 
 8000:
+        BYTE #00                ; 0x000c indicates atom 
+        BYTE #0C
+        BYTE #80
+        BYTE #04
+8004:
+        BYTE #80                ; val
+        BYTE #08
+        BYTE #00                ; props
+        BYTE #00
+8008:
+        BYTE #00                ; ml function CONS
+        BYTE #10
+        BYTE #67
+        BYTE #FA
 
 
 ;;; LISP-TULKKI
@@ -695,6 +714,119 @@
         SMI #04                 ; TUNNUS ?
         BNZ FB
 
+        DEC 6                   ; ON -> LÄHDE ETSIMÄÄN
+        RLDI A #7102
+6472:
+        SEX A
+
+        LDN A
+        XRI #FF                 ; KIRJASTO LOPPU?
+        BNZ 7D
+
+	;; The error code is missing in the original, but #10
+        ;; is listed as "illegal atom".
+        LDI #10                 ; JOS ON, ANNA ERR
+        PHI 8
+        BR 17
+
+        GHI 6                   ; LÖYTYIKÖ ATOMI?
+        XOR
+        STR 2
+        INC A
+        GLO 6
+        XOR
+        SEX 2
+        OR
+        SEX A
+        BZ 92                   ; JOS LÖYTYI, PRINTTAA
+6488:
+        INC A                   ; SEUR. ATOMI
+        GLO A
+        ADD
+        PLO A
+        GHI A
+        ADCI #00
+        PHI A
+        BR 73
+
+        SEX 2                   ; PRINTTAA
+        INC A
+        LDA A                   ; LASKURI PINOON
+        STR 2
+
+        LDN 2                   ; VÄHENNÄ
+        SMI #01
+        STR 2
+        BZ 50                   ; JOS LASKURI = 00, LOPETA PRINTTAUS
+649C:
+        LDA A                   ; HAE CHR
+        DEC 2
+        SCAL 4 7003             ; PRINTTAA
+        INC 2
+        BR 96
+64A5:
+        DEC 6
+        SCAL 4 60D1             ; LISTPRINT
+        STRING "("              ; ALKUSULKU
+        BYTE #00
+
+        NOP                     ; original: SCAL 4 7006   ; BREAK?
+        NOP
+        NOP
+        NOP
+        GHI 8
+        BZ B5                   ; JOS EI, JATKA
+        SRET 4
+64B5:
+        SEX 6                   ; RA = CAR
+        RLXA A
+        SEX 2
+        RSXD 6                  ; CDR PINOON
+        GHI A
+        PHI 6
+        GLO A
+        PLO 6
+        SCAL 4 6442             ; PRINT CAR
+
+        INC 2                   ; R6 = CDR
+        RLXA 6
+        DEC 2
+        SEX 6
+        RLXA 6
+        SEX 2
+        GHI 6                   ; JOS CDR = NIL, LOPETA
+        BNZ D9
+64CE:
+        GLO 6
+        BNZ ED                  ; CDR = T -> TULOASTA PIST. PARI
+
+        SCAL 4 60D1             ; LOPPUSULKU
+        STRING ")"
+        BYTE #00
+        SRET 4
+
+        LDN 6                   ; CDR ATOMI?
+        BNZ E5                  ; JOS EI, JATKA
+
+        INC 6                   ; JOS NIL -> LISTA, CAR = NIL
+        LDN 6
+        DEC 6
+        BZ E5
+        SMI #04                 ; T -> LISTA
+        BNZ ED                  ; EI -> PRINTTAA PIST. PARI
+64E5:
+        SCAL 4 60D1             ; VÄLISPACE
+        STRING " "
+        BYTE #00
+        BR AC                   ; JA JATKA
+
+        SCAL 4 60D1             ; PISTEELLINEN PARI
+        STRING " . "
+        BYTE #00
+
+        SCAL 4 6442             ; PRINT CDR
+        BR D1
+
 ;;; The addresses are a bit messed up in the original,
 ;;; but this is clearly the intent.
 64FB:
@@ -841,6 +973,166 @@
         SEX 2
         BR F2
 
+;;; GETARG
+
+65FE:
+        DEC 7
+        DEC 7
+        SEX 7
+        RLXA 6                  ; HAE ARG
+        SEX 2
+        RSXD 6                  ; TALLETA
+6606:
+        GHI 6                   ; NIL?
+        BNZ 15                  ; EI -> JATKA
+
+        RLDI 6 #7022            ; R6 OS FLAG
+        LDN 6
+        BZ 22                   ; JOS FLAG = 00, ÄLÄ ANNA ERRORIA
+
+        LDI #06                 ; WRONG # ARGS
+        PHI 8
+        BR 22
+
+        SEX 6                   ; VIE CDR ARGPINOON
+        INC 6
+        INC 6
+        RLXA 6
+        DEC 7
+        SEX 7
+        RSXD 6
+661E:
+        INC 7
+        INC 7
+        INC 7
+
+        SEX 2                   ; PALAUTA CAR
+        INC 2
+        RLXA 6
+        DEC 2
+        GHI 6
+        BZ 2D
+
+        SEX 6                   ; JA HAE ARG
+        RLXA 6
+        SEX 2
+
+        SRET 4
+
+;;; EVALARG
+
+662F:
+        SCAL 4 65FE             ; GETARG
+        SCAL 4 6511             ; EVAL
+        SRET 4
+
+
+;;; EVALTWO
+
+66C6:
+        SCAL 4 662F             ; EVALARG
+
+        DEC 7                   ; HAE ARGLIST
+        DEC 7
+        SEX 7
+        RLXA F
+        DEC 7
+        GLO 6                   ; CAR ARG PINOON
+        STR 7
+        DEC 7
+        GHI 6
+        STR 7
+        INC 7
+        INC 7
+        GHI F                   ; REST OF ARGS PINOON
+        STR 7
+        INC 7
+        GLO F
+        STR 7
+        INC 7
+66DD:
+        SEX 2
+        SCAL 4 662F             ; EVALARG
+
+        DEC 7                   ; RE = REST OF ARGS
+        LDN 7
+        PLO E
+        DEC 7
+        LDN 7
+        PHI E
+
+        DEC 7                   ; RF = 1ST ARG
+        DEC 7
+        SEX 7
+        RLXA F
+
+        SEX 2
+        SRET 4
+
+;;; (CONS X Y)
+
+67FA:
+        SCAL 4 6232             ; NEWNODE
+
+        DEC 7                   ; ADDR -> ARGSTACK
+        LDN 7
+        PLO F
+        GLO 6
+        ANI #FC
+        STR 7
+6805:
+        DEC 7
+        LDN 7
+        PHI F
+        GHI 6
+        STR 7
+
+        INC 7                   ; (X Y) -> ARGSTACK
+        INC 7
+        GHI F
+        STR 7
+        INC 7
+        GLO F
+        STR 7
+        INC 7
+
+        SCAL 4 66C6             ; EVALTWO
+
+        DEC 7
+        DEC 7
+        DEC 7
+        DEC 7
+681A:
+        LDA 7                   ; RD = NEW NODE
+        PHI D
+        LDA 7
+        ORI #03
+        PLO D
+
+        GHI 8                   ; ERR?
+        BNZ 37                  ; ON -> POIS
+
+        SEX D
+        GLO 6
+        STXD
+        GHI 6
+        STXD
+        GLO F
+        STXD
+        GHI F
+        STR D
+
+        GHI D                   ; R6 = NEW NODE
+        PHI 6
+        GLO D
+        PLO 6
+6830:
+        SEX 2
+        GHI E
+        BZ 37
+        LDI #06
+        PHI 8
+        SRET 4
 
 ;;; The code has references to I/O code at E9 and E7 pages.
 ;;; This does not show up in the memory map and there is no
