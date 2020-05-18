@@ -201,6 +201,7 @@
    (no-operand-op "LSNZ" line)
    ;; 0xC7
    ;; 0xC8
+   (no-operand-op "LSKP" line)
    ;; 0xC9
    ;; 0xCA
    ;; 0xCB
@@ -507,6 +508,8 @@
                                  (fn [] (if (not= (D) 0)
                                           (inc-16bit (inc-16bit (R (P))))
                                           (R (P))))]
+                          :LSKP [[:R (P)]
+                                 (fn [] (inc-16bit (inc-16bit (R (P)))))]
                           :SEP [[:P]
                                 (fn [] n)]
                           :SEX [[:X]

@@ -360,6 +360,17 @@
             :R [0x0005]}
            changes))))
 
+(deftest test-lskp
+  (let [changes
+        (run-prog
+         ["  LDI #12"
+          "  LSKP"
+          "  LDI #34"]
+         2)]
+    (is (= {:D 0x12
+            :R [0x0005]}
+           changes))))
+
 (deftest test-sep
   (let [changes
         (run-prog
