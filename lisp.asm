@@ -75,7 +75,7 @@
 
 7100:
         BYTE #71                ; 2 1ST BYTES = END OF LIB ADDR
-        BYTE #13
+        BYTE #1B
 
 7102:   
         BYTE #00
@@ -92,7 +92,12 @@
         BYTE #00
         BYTE #05
         STRING "CONS"
-7113:   
+7113:
+        BYTE #80
+        BYTE #0C
+        BYTE #06
+        STRING "QUOTE"
+711B:   
         BYTE #FF
 
 ;;; The memory map indicates that cells for Lisp built ins
@@ -101,8 +106,8 @@
 ;;; reconstruction.
 
 8000:
-        BYTE #00                ; 0x000c indicates atom 
-        BYTE #0C
+        BYTE #00                ; CONS
+        BYTE #0C                ; 0x000c indicates atom 
         BYTE #80
         BYTE #04
 8004:
@@ -115,7 +120,21 @@
         BYTE #10
         BYTE #67
         BYTE #FA
-
+800C:
+        BYTE #00                ; QUOTE
+        BYTE #0C
+        BYTE #80
+        BYTE #10
+8010:
+        BYTE #80
+        BYTE #14
+        BYTE #00
+        BYTE #00
+8014:
+        BYTE #00                ; ml function QUOTE
+        BYTE #10
+        BYTE #66
+        BYTE #4F
 
 ;;; LISP-TULKKI
 
@@ -1026,6 +1045,27 @@
         SCAL 4 6511             ; EVAL
         SRET 4
 
+
+;;; QUOTE
+
+664F:
+        SCAL 4 65FE             ; GETARG
+
+;;; ARGCHK
+
+6653:
+        DEC 7                   ; ARG. PINOSSA NIL?
+        DEC 7
+        SEX 7
+        RLXA F
+        SEX 2
+        GHI F
+        BZ 5F
+
+        LDI #06                 ; JOS EI, ANNA ERROR
+        PHI 8
+
+        SRET 4
 
 ;;; EVALTWO
 

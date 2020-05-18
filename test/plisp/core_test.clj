@@ -555,3 +555,18 @@
   (is (= (run-lisp "(CONS (CONS T T) (CONS NIL NIL))")
          " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-((T . T) NIL)\r\n-"
          )))
+
+(deftest test-quote1
+  (is (= (run-lisp "(QUOTE FOO)")
+         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-FOO\r\n-"
+         )))
+
+(deftest test-quote2
+  (is (= (run-lisp "(CONS (QUOTE FOO) NIL)")
+         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-(FOO)\r\n-"
+         )))
+
+(deftest test-quote3
+  (is (= (run-lisp "(QUOTE ((FOO BAR) BAZ))")
+         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-((FOO BAR) BAZ)\r\n-"
+         )))
