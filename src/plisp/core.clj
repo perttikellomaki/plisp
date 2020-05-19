@@ -223,6 +223,7 @@
    (no-operand-op "ADD" line)
    ;; 0xF5
    ;; 0xF6
+   (no-operand-op "SHR" line)
    ;; 0xF7
    ;; 0xF8
    (immediate-op "LDI" line)
@@ -522,6 +523,10 @@
                                 (fn [] (bit-and 0xff (+ (D) (mem (R (X))))))
                                 [:DF]
                                 (fn [] (if (> (+ (D) (mem (R (X)))) 0xff) 1 0))]
+                          :SHR [[:D]
+                                (fn [] (bit-shift-right (D) 1))
+                                [:DF]
+                                (fn [] (bit-and 0x01 (D)))]
                           :LDI [[:D]
                                 (fn [] immediate)]
                           :ORI [[:D]

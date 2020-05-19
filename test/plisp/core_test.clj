@@ -451,6 +451,23 @@
             :mem {0x0100 {:op :byte, :value 0xff}}}
            changes))))
 
+(deftest test-shr
+  (let [changes
+        (run-prog
+         ["  LDI #AA"
+          "  SHR"])]
+    (is (= {:D 0x55
+            :R [0x0003]}
+           changes)))
+  (let [changes
+        (run-prog
+         ["  LDI #55"
+          "  SHR"])]
+    (is (= {:D 0x2a
+            :DF 1
+            :R [0x0003]}
+           changes))))
+
 (deftest test-ldi
   (let [changes
         (run-prog
