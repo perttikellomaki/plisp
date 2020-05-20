@@ -75,7 +75,7 @@
 
 7100:
         BYTE #71                ; 2 1ST BYTES = END OF LIB ADDR
-        BYTE #1B
+        BYTE #27
 
 7102:   
         BYTE #00
@@ -98,6 +98,16 @@
         BYTE #06
         STRING "QUOTE"
 711B:   
+        BYTE #80
+        BYTE #18
+        BYTE #04
+        STRING "CAR"
+7121:   
+        BYTE #80
+        BYTE #24
+        BYTE #04
+        STRING "CDR"
+7127:   
         BYTE #FF
 
 ;;; The memory map indicates that cells for Lisp built ins
@@ -135,6 +145,36 @@
         BYTE #10
         BYTE #66
         BYTE #4F
+8018:
+        BYTE #00                ; CAR
+        BYTE #0C
+        BYTE #80
+        BYTE #1C
+801C:
+        BYTE #80
+        BYTE #20
+        BYTE #00
+        BYTE #00
+8020:
+        BYTE #00                ; ml function CAR
+        BYTE #10
+        BYTE #66
+        BYTE #90
+8024:
+        BYTE #00                ; CDR
+        BYTE #0C
+        BYTE #80
+        BYTE #28
+8028:
+        BYTE #80
+        BYTE #2C
+        BYTE #00
+        BYTE #00
+802C:
+        BYTE #00                ; ml function CDR
+        BYTE #10
+        BYTE #66
+        BYTE #A6
 
 ;;; LISP-TULKKI
 
@@ -977,7 +1017,51 @@
 6597:
         BZ 8E
 
-        IDLE
+        SCAL 4 60D1             ; PRINTATAAN
+
+        BYTE #0D
+        BYTE #0A
+        STRING "ERR #"
+        BYTE #00
+
+        GHI 8
+        SHR
+        SHR
+        SHR
+        SHR
+        ORI #30
+        SCAL 4 7003
+65B0:   
+        GHI 8
+        ANI #0F
+        ORI #30
+        SCAL 4 7003
+        
+        SCAL 4 60D1
+        STRING " WHILE EVALUATING:"
+        BYTE #0D
+        BYTE #0A
+        BYTE #00
+
+        INC 2                   ; HAE EXPR
+        RLXA 6
+        DEC 2
+        LDI #00                 ; NOLLAA ERR
+        PHI 8
+65D9:
+        SCAL 4 6442             ; JA PRINTTAA
+
+        LDI #FF                 ; KUITTAA ERR
+        PHI 8
+        RLDI 6 #0000
+        SCAL 4 60D1
+        STRING "\r\n"
+        BYTE #00
+        SRET 4
+65ED:
+        GHI 8                   ; PAIKKAUS
+        BZ 2E
+        BR 92
 
         
 ;;; ML-FN CALL
@@ -1045,6 +1129,27 @@
         SCAL 4 6511             ; EVAL
         SRET 4
 
+;;; ATOMTEST (ATOMI PAL. 04)
+
+6639:
+        GHI 6                   ; T OR NIL?
+        BZ 48
+
+        LDN 6                   ; LISTA?
+        BNZ 4B
+
+        INC 6                   ; CAR T OR NIL?
+        LDN 6
+        DEC 6
+6642:
+        BZ 4B                   ; NIL -> LISTA
+        SMI #04
+        BZ 4B                   ; T -> LISTA
+
+        LDI #04
+        LSKP
+        LDI #00
+        SRET 4
 
 ;;; QUOTE
 
@@ -1066,6 +1171,41 @@
         PHI 8
 
         SRET 4
+
+;;; (CAR X)
+
+6690:
+        SCAL 4 662F             ; EVALARG
+        SCAL 4 6639             ; ATOMTEST
+
+	BZ B2                   ; LISTA -> HAE CDR (probably a typo, should be CAR)
+
+        GHI 6                   ; NIL -> RET NIL
+        BNZ A0
+669D:
+        GLO 6
+        BZ 53                   ; RET NIL & CHECK ARGS
+66A0:
+        LDI #04                 ; ERR 04: LIST EXPECTED
+        PHI 8
+        SRET 4
+        
+        NOP                     ; This is in the original, looks like a filler after
+                                ; some pencil and eraser patching.
+
+;;; (CDR X)
+
+66A6:
+        SCAL 4 662F             ; EVALARG
+        SCAL 4 6639             ; ATOMTEST
+        BNZ 9A                  ; ATOM -> ERR?
+66B0:
+        INC 6                   ; HAE CDR
+        INC 6
+        SEX 6
+        RLXA 6
+        SEX 2
+        BR 53
 
 ;;; EVALTWO
 

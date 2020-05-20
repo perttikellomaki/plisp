@@ -586,3 +586,19 @@
          (lisp-output "(FOO)")))
   (is (= (run-lisp "(QUOTE ((FOO BAR) BAZ))")
          (lisp-output "((FOO BAR) BAZ)"))))
+
+(deftest test-car
+  (is (= (run-lisp "(CAR (CONS T NIL))")
+         (lisp-output "T")))
+  (is (= (run-lisp "(CAR (QUOTE (FOO BAR)))")
+         (lisp-output "FOO")))
+  (is (= (run-lisp "(CAR (QUOTE ((FOO) BAR)))")
+         (lisp-output "(FOO)"))))
+
+(deftest test-car
+  (is (= (run-lisp "(CDR (CONS NIL T))")
+         (lisp-output "T")))
+  (is (= (run-lisp "(CDR (QUOTE (FOO BAR)))")
+         (lisp-output "(BAR)")))
+   (is (= (run-lisp "(CDR (QUOTE (FOO (BAR))))")
+         (lisp-output "((BAR))"))))
