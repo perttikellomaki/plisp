@@ -1,5 +1,6 @@
 (ns plisp.core-test
   (:require [clojure.test :refer :all]
+            [clojure.string :as str]
             [clojure.data :refer :all]
             [plisp.core :refer :all]))
 
@@ -547,54 +548,41 @@
     (is (= {:R [0x1234]}
            changes))))
 
+(defn lisp-output [& outputs]
+  (str " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-"
+       (str/join "\r\n-" outputs)
+       "\r\n-"))
+       
 (deftest test-lisp-nil
   (is (= (run-lisp "()")
-         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-NIL\r\n-")))
+         (lisp-output "NIL"))))
 
 (deftest test-lisp-atom-nil
   (is (= (run-lisp "NIL")
-         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-NIL\r\n-")))
+         (lisp-output "NIL"))))
 
 (deftest test-lisp-atom-t
   (is (= (run-lisp "T")
-         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-T\r\n-")))
+         (lisp-output "T"))))
 
 (deftest test-lisp-nil-t-nil
   (is (= (run-lisp "()\rT\r()")
-         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-NIL\r\n-T\r\n-NIL\r\n-"
-         )))
+         (lisp-output "NIL" "T" "NIL"))))
 
-(deftest test-lisp-cons1
+(deftest test-lisp-cons
   (is (= (run-lisp "(CONS T NIL)")
-         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-(T)\r\n-"
-         )))
-
-(deftest test-lisp-cons2
+         (lisp-output "(T)")))
   (is (= (run-lisp "(CONS T (CONS NIL NIL))")
-         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-(T NIL)\r\n-"
-         )))
-
-(deftest test-lisp-cons3
+         (lisp-output "(T NIL)")))
   (is (= (run-lisp "(CONS (CONS T NIL) (CONS NIL NIL))")
-         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-((T) NIL)\r\n-"
-         )))
-
-(deftest test-lisp-cons4
+         (lisp-output "((T) NIL)")))
   (is (= (run-lisp "(CONS (CONS T T) (CONS NIL NIL))")
-         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-((T . T) NIL)\r\n-"
-         )))
+         (lisp-output "((T . T) NIL)"))))
 
-(deftest test-quote1
+(deftest test-quote
   (is (= (run-lisp "(QUOTE FOO)")
-         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-FOO\r\n-"
-         )))
-
-(deftest test-quote2
+         (lisp-output "FOO")))
   (is (= (run-lisp "(CONS (QUOTE FOO) NIL)")
-         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-(FOO)\r\n-"
-         )))
-
-(deftest test-quote3
+         (lisp-output "(FOO)")))
   (is (= (run-lisp "(QUOTE ((FOO BAR) BAZ))")
-         " P-LISP FOR 1805 vers 1.0 210884\r\n C 1984 PERTTI KELLOMÄKI      \r\n CELLS FREE\r\nLISP RUNNING\r\n\r\n-((FOO BAR) BAZ)\r\n-"
-         )))
+         (lisp-output "((FOO BAR) BAZ)"))))
