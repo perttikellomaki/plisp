@@ -80,11 +80,10 @@
 (deftest test-bz
   (let [changes
         (run-prog
-         ["  LDI #12"
-          "  LDI #00"
+         ["  LDI #00"
           "  BZ 08"
           "  LDI #34"]
-         3)]
+         2)]
     (is (= {:R [0x0008]}
            changes)))
   (let [changes
