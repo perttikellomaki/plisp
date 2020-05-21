@@ -118,6 +118,7 @@
    ;; 0x32
    (short-branch-op "BZ" line)
    ;; 0x33
+   (short-branch-op "BDF" line)
    ;; 0x34
    ;; 0x35
    ;; 0x36
@@ -222,6 +223,7 @@
    ;; 0xF4
    (no-operand-op "ADD" line)
    ;; 0xF5
+   (no-operand-op "SD" line)
    ;; 0xF6
    (no-operand-op "SHR" line)
    ;; 0xF7
@@ -433,6 +435,8 @@
                                 (fn [] (short-branch page-address true (R (P))))]
                           :BZ [[:R (P)]
                                (fn [] (short-branch page-address (= (D) 0) (R (P))))]
+                          :BDF [[:R (P)]
+                                (fn [] (short-branch page-address (= (DF) 1) (R (P))))]
                           :BNZ [[:R (P)]
                                 (fn [] (short-branch page-address (not= (D) 0) (R (P))))]
                           :LDA [[:D]
@@ -523,6 +527,10 @@
                                 (fn [] (bit-and 0xff (+ (D) (mem (R (X))))))
                                 [:DF]
                                 (fn [] (if (> (+ (D) (mem (R (X)))) 0xff) 1 0))]
+                          :SD [[:D]
+                               (fn [] (bit-and 0xff (- (mem (R (X))) (D))))
+                               [:DF]
+                               (fn [] (if (>= (mem (R (X))) (D)) 1 0))]
                           :SHR [[:D]
                                 (fn [] (bit-shift-right (D) 1))
                                 [:DF]
