@@ -205,6 +205,7 @@
    (no-operand-op "LSKP" line)
    ;; 0xC9
    ;; 0xCA
+   (long-branch-op "LBNZ" line)
    ;; 0xCB
    ;; 0xCC
    ;; 0xCD
@@ -387,6 +388,11 @@
     (replace-lo pc page-address)
     pc))
 
+(defn long-branch [long-address condition pc]
+  (if condition
+    long-address
+    pc))
+
 ;;;
 ;;; The processor simulator proper.
 ;;; Each instruction is described as a list of effects on processor state.
@@ -515,6 +521,10 @@
                                           (R (P))))]
                           :LSKP [[:R (P)]
                                  (fn [] (inc-16bit (inc-16bit (R (P)))))]
+                          :LBNZ [[:R (P)]
+                                 (fn [] (long-branch long-address
+                                                     (not= (D) 0)
+                                                     (R (P))))]
                           :SEP [[:P]
                                 (fn [] n)]
                           :SEX [[:X]

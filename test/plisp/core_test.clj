@@ -13,6 +13,7 @@
    (let [initial (initial-processor instructions)]
      (loop [processor initial
             n n]
+       (dump-processor processor)
        (if (= n 0)
          (let [[_ changes _] (diff initial processor)]
            changes)
@@ -390,6 +391,30 @@
          2)]
     (is (= {:D 0x12
             :R [0x0005]}
+           changes))))
+
+(deftest test-lbnz
+  (let [changes
+        (run-prog
+         ["  LDI #12"
+          "  LBNZ 0100"
+          "  LDI #34"
+          "0100:"
+          "  NOP"]
+         3)]
+    (is (= {:D 0x12
+            :R [0x0101]}
+           changes)))
+  (let [changes
+        (run-prog
+         ["  LDI #00"
+          "  LBNZ 0100"
+          "  LDI #34"
+          "0100:"
+          "  NOP"]
+         3)]
+    (is (= {:D 0x34
+            :R [0x0007]}
            changes))))
 
 (deftest test-sep
