@@ -13,7 +13,6 @@
    (let [initial (initial-processor instructions)]
      (loop [processor initial
             n n]
-       (dump-processor processor)
        (if (= n 0)
          (let [[_ changes _] (diff initial processor)]
            changes)
@@ -115,6 +114,17 @@
           "  LDI #34"])]
     (is (= {:D 0x34
             :R [0x0008]}
+           changes))))
+
+(deftest test-skp
+  (let [changes
+        (run-prog
+         ["  RLDI 1 #1234"
+          "  SKP"
+          "  INC 1"
+          "  NOP"]
+         3)]
+    (is (= {:R [0x0007 0x1234]}
            changes))))
 
 (deftest test-bnz

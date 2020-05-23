@@ -124,6 +124,7 @@
    ;; 0x36
    ;; 0x37
    ;; 0x38
+   (no-operand-op "SKP" line)
    ;; 0x39
    ;; 0x3A
    (short-branch-op "BNZ" line)
@@ -443,6 +444,8 @@
                                (fn [] (short-branch page-address (= (D) 0) (R (P))))]
                           :BDF [[:R (P)]
                                 (fn [] (short-branch page-address (= (DF) 1) (R (P))))]
+                          :SKP [[:R (P)]
+                                (fn [] (inc-16bit (R (P))))]
                           :BNZ [[:R (P)]
                                 (fn [] (short-branch page-address (not= (D) 0) (R (P))))]
                           :LDA [[:D]
