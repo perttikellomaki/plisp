@@ -427,6 +427,24 @@
             :R [0x0007]}
            changes))))
 
+(deftest test-lsz
+  (let [changes
+        (run-prog
+         ["  LDI #00"
+          "  LSZ"
+          "  LDI #34"]
+         2)]
+    (is (= {:R [0x0005]}
+           changes)))
+  (let [changes
+        (run-prog
+         ["  LDI #12"
+          "  LSZ"
+          "  LDI #34"])]
+    (is (= {:D 0x34
+            :R [0x0005]}
+           changes))))
+
 (deftest test-sep
   (let [changes
         (run-prog

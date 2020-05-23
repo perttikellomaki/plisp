@@ -211,6 +211,7 @@
    ;; 0xCC
    ;; 0xCD
    ;; 0xCE
+   (no-operand-op "LSZ" line)
    ;; 0xCF
    ;; 0xDN
    (register-op "SEP" line)
@@ -528,6 +529,10 @@
                                  (fn [] (long-branch long-address
                                                      (not= (D) 0)
                                                      (R (P))))]
+                          :LSZ [[:R (P)]
+                                (fn [] (if (= (D) 0)
+                                         (inc-16bit (inc-16bit (R (P))))
+                                         (R (P))))]
                           :SEP [[:P]
                                 (fn [] n)]
                           :SEX [[:X]
