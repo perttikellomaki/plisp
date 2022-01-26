@@ -75,7 +75,7 @@
 
 7100:
         BYTE #71                ; 2 1ST BYTES = END OF LIB ADDR
-        BYTE #27
+        BYTE #3E
 
 7102:   
         BYTE #00
@@ -107,7 +107,22 @@
         BYTE #24
         BYTE #04
         STRING "CDR"
-7127:   
+7127:
+        BYTE #80
+        BYTE #30
+        BYTE #07
+        STRING "LAMBDA"
+7130:
+	BYTE #80
+        BYTE #3C
+        BYTE #05
+        STRING "SETQ"
+7137:
+	BYTE #80
+        BYTE #48
+        BYTE #05
+        STRING "DEFQ"
+713E:
         BYTE #FF
 
 ;;; The memory map indicates that cells for Lisp built ins
@@ -175,6 +190,51 @@
         BYTE #10
         BYTE #66
         BYTE #A6
+8030:
+        BYTE #00                ; LAMBDA
+        BYTE #0C
+        BYTE #80
+        BYTE #34
+8034:
+        BYTE #80
+        BYTE #38
+        BYTE #00
+        BYTE #00
+8038:
+        BYTE #00                ; ml function LAMBDA
+        BYTE #10
+        BYTE #69
+        BYTE #F3
+803C:
+        BYTE #00                ; SETQ
+        BYTE #0C
+        BYTE #80
+        BYTE #40
+8040:
+        BYTE #80
+        BYTE #44
+        BYTE #00
+        BYTE #00
+8044:
+        BYTE #00                ; ml function SETQ
+        BYTE #10
+        BYTE #67
+        BYTE #46
+8048:
+        BYTE #00                ; DEFQ
+        BYTE #0C
+        BYTE #80
+        BYTE #4C
+804C:
+        BYTE #80
+        BYTE #50
+        BYTE #00
+        BYTE #00
+8050:
+        BYTE #00                ; ml function DEFQ
+        BYTE #10
+        BYTE #67
+        BYTE #69
 
 ;;; LISP-TULKKI
 
@@ -410,6 +470,41 @@
         INC 2
         RLXA F
         RLXA E
+        DEC 2
+        SRET 4
+
+;;; LENGTH
+
+6279:
+        RSXD 6                  ; TALLETA R6
+
+        LDI #00                 ; NOLLAA KENNOLASKURI
+        PHI E
+        PLO E
+
+        GHI 6                   ; LISTA LOPPU?
+        BZ 99
+
+        LDA 6                   ; ATOMI?
+        BNZ 91
+        LDN 6
+        BZ 91                   ; NIL OK
+        SMI #04
+        BZ 91                   ; T OK
+628C:
+        LDI #04                 ; ANNA VIRHEILMOITUS
+        PHI 8
+        BR 99
+
+        INC E
+        INC 6
+        SEX 6
+        RLXA 6                  ; JA SIIRRY SEUR.
+        SEX 2
+        BR 7F
+6299:
+        INC 2                   ; PALAUTA R6
+        RLXA 6
         DEC 2
         SRET 4
 
@@ -1249,6 +1344,218 @@
         SEX 2
         SRET 4
 
+;;; (SET X Y)
+
+6706:
+        SCAL 4 66C6             ; EVALTWO
+
+        SEX D                   ; RD = PAL. ARVO
+        RNX 6
+        SEX 2
+
+        SCAL 4 6732             ; SYMBTEST (RF OS.)
+
+        BNZ 30                  ; ERR -> POIS
+
+        SEX F                   ; RF OS. VALUE
+        INC F
+        INC F
+        RLXA F
+        INC F
+671A:
+        LDN F                   ; CONST?
+        ANI #02
+        BNZ 25                  ; ON -> ERR
+
+        GHI E                   ; ARGS END?
+        BZ 29                   ; ON -> VIE
+        LDI #06
+        LSKP
+        LDI #11
+        PHI 8
+        LSKP
+
+        RSXD 6                  ; VIE ARVO
+        SEX 2
+        GHI D
+        PHI 6
+        GLO D
+        PLO 6
+        SRET 4
+
+;;; SYMBTEST (RF OS.)
+
+6732:
+        GHI 8                   ; ERR?
+        BNZ 44
+
+        GHI F                   ; T \/ NIL -> ERR
+        BZ 41
+        LDA F
+        BNZ 41
+        LDN F
+        DEC F
+        XRI #0C
+        BZ 44
+
+        LDI #12                 ; ERR
+        PHI 8
+        SRET 4
+
+;;; (SETQ X Y)
+
+6746:
+        SCAL 4 65FE             ; GETARG
+        SCAL 4 66CA
+        BR 0A
+
+;;; (DEF X Y)
+
+6750:
+        SCAL 4 662F             ; EVALARG
+        RSXD 6                  ; TALTEEN
+6756:
+        SCAL 4 65FE             ; GETARG
+
+        INC 2                   ; RF = 1ST
+        RLXA F
+        DEC 2
+
+        GHI F                   ; RD = PAL. ARVO
+        PHI D
+        GLO F
+        PLO D
+
+        DEC 7                   ; RE.1 = REST ARGS
+        DEC 7
+        LDA 7
+        PHI E
+        INC 7
+
+        BR 0E
+
+;;; (DEFQ X Y)
+
+6769:
+        SCAL 4 65FE             ; GETARG
+        BR 54
+
+;;; (PROGN X Y Z ...)
+
+6776:
+        RLDI 6 #0000            ; R6 = NIL
+677A:
+        DEC 7                   ; ARGS LOPPU
+        DEC 7
+        LDA 7
+        INC 7
+        BZ 87                   ; ON -> POIS
+
+        SCAL 4 662F             ; EVALARG
+
+        GHI 8                   ; ERR -> POIS
+        BZ 7A
+
+        SRET 4
+
+
+;;; COPYLIST
+
+6794:
+        DEC 7
+        DEC 7
+        SEX 7
+        RLXA 6
+
+        SEX 2                   ; LISTA TALTEEN
+        RSXD 6
+679C:
+        SCAL 4 6279             ; LENGTH
+        SCAL 4 629F             ; MAKELIST
+
+        INC 2                   ; RF = VANHA LISTA
+        RLXA F
+        DEC 2
+
+        GHI 8                   ; ERR -> POIS
+        BNZ C4
+
+        DEC 7                   ; VIE UUSI LISTA
+        GLO 6                   ; original has GLO 7, but that must be a typo
+        STR 7
+        DEC 7
+        GHI 6
+        STR 7
+67B1:
+        INC 7
+        INC 7
+
+        GHI F                   ; LISTA LOPPU?
+        BZ C4                   ; ON -> POIS
+
+        LDA F                   ; COPY CAR
+        STR 6
+        INC 6
+        LDA F
+        STR 6
+        INC 6
+        SEX F
+        RLXA F
+        SEX 6
+        RLXA 6
+        BR B3
+
+        SEX 2
+        SRET 4
+
+;;;  EVALLIST
+
+67C7:
+        DEC 7                   ; RF OS. LISTAA
+        DEC 7
+        SEX 7
+        RLXA F
+
+        SEX 2                   ; LISTA TALTEEN
+        RSXD F
+
+        DEC 7                   ; RF OS. LISTAA
+        DEC 7
+        SEX 7
+        RLXA F
+
+        GHI F                   ; LISTA LOPPU?
+        BZ E9                   ; ON -> POIS
+
+        SEX 2
+        RSXD F
+67DA:
+        SCAL 4 662F             ; EVALARG
+
+        INC 2                   ; HAE PTR
+        RLXA F
+        DEC 2
+
+        INC F                   ; VIE CAR
+        SEX F
+        RSXD 6
+
+        GHI 8                   ; VIRHE -> POIS
+        BZ CF
+
+        SEX 2
+        INC 2
+        RLXA 6
+        DEC 2
+        SRET 4
+
+;;; (LIST X Y Z ...)
+
+67F0:
+        SCAL 4 6794             ; COPYLIST
+        SCAL 4 67C7             ; EVALLIST
+        SRET 4
+
 ;;; (CONS X Y)
 
 67FA:
@@ -1313,6 +1620,282 @@
         LDI #06
         PHI 8
         SRET 4
+
+;;; SAVEOLDS
+
+68F9:
+        SCAL 4 65FE             ; GETARG
+        GHI 6
+        LBNZ 6909
+6901:
+        GLO 6
+        BZ 0C
+
+        LDI #13                 ; ERR: MISSING ARGLIST OR LOCAL VALUE LIST
+        STR 2
+        BR ED
+6909:
+        LDN 6                   ; ATOM?
+        BZ 04
+
+        GHI 6                   ; ARGLIST PINOON
+        STR 7
+        INC 7
+        GLO 6
+        STR 7
+        INC 7
+        GHI 6
+        STR 7
+        INC 7
+        GLO 6
+        STR 7
+        INC 7
+6918:
+        SCAL 4 6794             ; COPYLIST
+
+        DEC 7                   ; R6 = LIST
+        DEC 7
+        LDA 7
+        PHI 6
+        LDA 7
+        PLO 6
+
+        GHI 8                   ; ERR?
+        BNZ 62                  ; the address is missing in the original, so this is an educated guess
+
+        GHI 6                   ; LISTA LOPPU?
+        BZ 44
+
+        SEX 6
+        RLXA F
+        SEX 2
+692C:
+        SCAL 4 6732             ; SYMBTEST
+
+        BNZ 62                  ; ERR -> POIS
+
+        SEX F                   ; RF = VAL
+        INC F
+        INC F
+        RLXA F
+        RLXA F
+
+        DEC 6
+        SEX 6
+        RSXD F
+        INC 6
+        INC 6
+        INC 6
+        RLXA 6
+        BR 25
+6944:
+        DEC 7                   ; CDR PINNALLE
+        LDN 7
+        PLO 6
+        DEC 7
+        LDN 7
+        PHI 6
+
+        SEX F
+        RNX 7
+
+        DEC F
+        DEC F
+        DEC F
+        LDN F
+        PLO E
+        DEC F
+        LDN F
+        PHI E
+
+        INC F
+        SEX F
+        RSXD 6
+6959:
+        INC 7
+        SEX 7
+        RSXD E
+
+        SKP
+        INC 7
+        INC 7
+        INC 7
+        INC 7
+
+        SEX 2
+        SRET 4
+
+;;; ROTVALS
+
+6965:
+        SCAL 4 68F9             ; SAVEOLDS
+
+        GHI 7
+        PHI F
+        GLO 7
+        PLO F
+696D:
+        RLDI E #700A            ; RE OS. ARGST. PAGE
+
+        DEC F                   ; RF OS. ACT ARGS
+        DEC F
+        DEC F
+        DEC F
+        DEC F
+        DEC F
+        DEC F
+        GHI F                   ; PINON ALIVUOTO?
+        STR 2
+        LDN E
+        SD
+        BDF 83
+
+        LDI #14                 ; ERR
+        STR 2
+        BR ED
+6983:
+        GHI F                   ; RE OS. 2 TAVUA ETEENP.
+        PHI E
+        GLO F
+        PLO E
+        INC E
+
+        LDN F
+        PLO 6
+        DEC F
+        LDN F
+        PHI 6
+
+        LDI #06                 ; SIIRRÄ PINON PINTAA 2 TAVUA ALASPÄIN
+
+        STR 2
+        LDA E
+        STR F
+        INC F
+        LDN 2
+        SMI #01
+        BNZ 8F
+6998:
+        GHI 6                   ; VIE ACT ARGS
+        STR F                   ; PINON PINNALLE
+        INC F
+        GLO 6
+        STR F
+        INC F
+        SRET 4
+
+;;; NEWVALS
+
+69A0:
+        DEC 7                   ; RD = NEW VALS
+        LDN 7
+        PLO D
+        DEC 7
+        LDN 7
+        PHI D
+        DEC 7
+        DEC 7
+        DEC 7
+        LDN 7                   ; RF = FORMS
+        PLO F
+        DEC 7
+        LDN 7
+        PHI F
+69AE:
+        INC 7
+        INC 7
+        INC 7
+        INC 7
+
+        GHI F                   ; FORM ARGS END?
+        BZ D3
+        GHI D                   ; VALS END
+        BNZ BE
+
+        LDI #15                 ; ERR
+        STR 2
+        SEX 2
+        BR ED
+
+        SEX F                   ; RE OS VAL
+        RLXA E
+        SEX E
+        INC E
+        INC E
+        RLXA E
+69C6:
+        LDA D                   ; VIE ARVOT
+        STR E
+        INC E
+        LDA D
+        STR E
+
+        SEX D
+        RLXA D
+        SEX F
+        RLXA F
+        BR B2
+
+        GHI D                   ; VALS LOPPU?
+        BNZ B8                  ; EI -> ERR
+        SEX 2
+        SRET 4
+
+;;; RETOLDS
+
+69D9:
+        DEC 7
+        DEC 7
+        DEC 7
+        LDN 7
+        PLO F                   ; RF = FORMALS
+        DEC 7
+        LDN 7
+        PHI F
+        DEC 7
+        LDN 7
+        PLO D                   ; RD = OLD VALS
+        DEC 7
+        LDN 7
+        PHI D
+        INC 7
+        INC 7
+        INC 7
+        INC 7
+        BR B2
+69ED:
+        GHI 8                   ; ERROR JO ANNETTU?
+        LSNZ                    ; ON -> EI ANNETA UUTTA
+        LDN 2
+        PHI 8
+        SRET 4
+
+;;; (LAMBDA (ARGS) (S-EXPR))
+
+69F3:
+        SCAL 4 6965             ; ROTVALS
+
+        GHI 8
+        LSZ
+
+        SRET 4                  ; ERR -> PALAA
+
+        SCAL 4 67F0             ; LIST
+
+        DEC 7                   ; VIE TULOS PINOON
+        GLO 6
+        STR 7
+        DEC 7
+        GHI 6
+        STR 7
+        INC 7
+        INC 7
+6A07:
+        SCAL 4 69A0             ; NEWVALS
+        SCAL 4 677A             ; PROGN
+        SCAL 4 69D4             ; RETVALS
+        SRET 4
+
 
 ;;; The code has references to I/O code at E9 and E7 pages.
 ;;; This does not show up in the memory map and there is no
