@@ -1,10 +1,6 @@
 # plisp
 
-A Clojure library designed to ... well, that part is up to you.
-
-## Usage
-
-FIXME
+Lisp in Lisp with a twist.
 
 ## License
 
