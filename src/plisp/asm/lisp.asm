@@ -1,5 +1,5 @@
 ;;; P-LISP vers. 1.0 for the RCA 1805, 1984-08-20 onwards
-;;; Originally written on paper in pencil and entered in hex by hand.
+;;; Originally written on paper with pencil and entered in hex by hand.
 ;;; This is a third version of the Lisp, I think. There is an earlier
 ;;; version also labeled 1.0 from early 1984, but for some reason I
 ;;; decided to start over. I seem to remember an even earlier version,
@@ -125,7 +125,7 @@
 713E:
         BYTE #FF
 
-;;; The memory map indicates that cells for Lisp built ins
+;;; The memory map indicates that cells for Lisp built-ins
 ;;; are stored in a separate area.
 ;;; There is no surviving documentation, so this is a modern
 ;;; reconstruction.
