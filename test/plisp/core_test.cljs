@@ -36,7 +36,7 @@
         (run-prog
          ["  IDLE"])]
     (is (= {:R [1]
-            :running false}
+            :status :idle}
            changes))))
 
 (deftest test-ldn

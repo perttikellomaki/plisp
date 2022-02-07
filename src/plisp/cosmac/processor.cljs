@@ -23,7 +23,7 @@
     :mem prog
     :input-buffer input-buffer
     :output-buffer []
-    :running true
+    :status :running
     }))
 
 ;;;
@@ -129,8 +129,8 @@
             (R [n] (get-in processor [:R n]))]
          (let [{:keys [n immediate long-immediate page-address long-address]} instruction
                effect (case (:op instruction)
-                          :IDLE [[:running]
-                                 (fn [] false)]
+                          :IDLE [[:status]
+                                 (fn [] :idle)]
                           :LDN [[:D]
                                 (fn [] (mem (R n)))]
                           :INC [[:R n]

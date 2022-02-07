@@ -34,6 +34,6 @@
 
 (defn run-lisp [input]
   (apply str
-         (-> (drop-while :running (lisp-execution input))
+         (-> (drop-while #(= (:status %) :running) (lisp-execution input))
              first
              :output-buffer)))
