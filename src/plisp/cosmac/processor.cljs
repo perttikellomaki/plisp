@@ -272,11 +272,14 @@
                           :READCHAR (if (empty? (:input-buffer processor))
                                       ;; Undo instruction fetch, i.e. block
                                       [[:R (P) ]
-                                       (fn [] instruction-addr)]
+                                       (fn [] instruction-addr)
+                                       [:status]
+                                       (fn [] :read-blocked)]
                                       [[:D]
                                        (fn [] (.charCodeAt (first (:input-buffer processor))))
                                        [:input-buffer]
-                                       (fn [] (rest (:input-buffer processor)))])
+                                       (fn []
+                                         (rest (:input-buffer processor)))])
 
                           ;; Just enough support for executing hex coded instructions
                           ;; to get the Lisp running.

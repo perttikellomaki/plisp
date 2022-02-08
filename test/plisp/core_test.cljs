@@ -704,7 +704,20 @@
       (is (= {:D (.charCodeAt "2")
               :R [0x0003]
               :input-buffer ["3"]}
-             changes)))))
+             changes))))
+  (testing "Read blocking"
+    (let [changes
+          (run-prog
+           ["  READCHAR"
+            "  READCHAR"]
+           {:input ["0"]})]
+      (is (= (dissoc {:R [1]
+                      :D (.charCodeAt "0")
+                      :input-buffer []
+                      :status :read-blocked}
+                     :input-buffer)
+             (dissoc changes :input-buffer)))
+      (is (empty? (:input-buffer changes))))))
             
 ;;;
 ;;; Lisp tests
