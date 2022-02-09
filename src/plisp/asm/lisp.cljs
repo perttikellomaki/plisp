@@ -24,13 +24,15 @@
   (iterate processor/next-state
            (processor/reset prog 0x6000 input)))
 
+(def initial-lisp-memory (memory/layout lisp-source))
+
 ;;;
 ;;; Run Lisp.
 ;;;
 
 (defn lisp-execution [input]
-  (execution (memory/layout plisp.asm.lisp/lisp-source)
-                          (concat input ["\r" "\004"])))
+  (execution initial-lisp-memory
+             (concat input ["\r" "\004"])))
 
 (defn run-lisp [input]
   (apply str

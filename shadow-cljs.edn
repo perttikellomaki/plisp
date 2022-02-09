@@ -5,7 +5,9 @@
  :source-paths ["src" "test"]
 
  :dependencies
- [[reagent "1.1.0"]
+ [[arttuka/reagent-material-ui "5.2.4-0"]
+
+  [reagent "1.1.0"]
   [re-frame "1.2.0"]
 
   [binaryage/devtools "1.0.4"]

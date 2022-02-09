@@ -3,6 +3,6 @@
    [re-frame.core :as re-frame]))
 
 (re-frame/reg-sub
- ::name
+ ::lisp-output
  (fn [db]
-   (:name db)))
+   (:lisp-output db)))
