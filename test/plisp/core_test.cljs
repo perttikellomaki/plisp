@@ -15,7 +15,7 @@
 (defn initial-processor [instructions input]
   (processor/reset
    (memory/layout
-    (map parser/parse-line instructions))
+    (map-indexed parser/parse-line instructions))
    0x0000
    input))
 

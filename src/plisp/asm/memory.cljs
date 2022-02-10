@@ -4,31 +4,37 @@
 ;;; Lay out instructions in memory.
 ;;;
 
-(defn layout
-  "Lay out instructions in memory. Returns a map representing the memory."
-  [instructions]
-  (loop [addr 0
-         instructions instructions
-         memory {}]
-    (if (empty? instructions)
-      memory
-      (let [[insn & insns] instructions
-            op (:op insn)]
-        (cond (= op :address)
-              (recur (:address insn)
-                     insns
-                     memory)
-              (= op :string)
-              (recur addr
-                     (concat (map (fn [c] {:op :byte :value (.charCodeAt c) :bytes 1})
-                                  (:value insn))
-                             insns)
-                     memory)
-              (= op :empty)
-              (recur addr
-                     insns
-                     memory)
-              :else
-              (recur (+ addr (:bytes insn))
-                     insns
-                     (assoc-in memory [addr] insn)))))))
+(defn- layout-iter [{:keys [address memory]} {:keys [op] :as instruction}]
+  (cond (= op :address)
+        {:address (:address instruction)
+         :memory   memory}
+
+        (= op :empty)
+        {:adress address
+         :memory memory}
+
+        :else
+        {:address (+ address (:bytes instruction))
+         :memory  (assoc-in memory [address] instruction)}))
+
+(defn- expand-string [{:keys [op value] :as instruction}]
+  (if (= op :string)
+    (map (fn [c] (assoc instruction
+                        :op    :byte
+                        :value (.charCodeAt c)
+                        :bytes 1))
+         value)
+    instruction))
+
+(defn- layout-simple [instructions]
+  (reduce layout-iter
+          {:address 0
+           :memory  {}}
+          instructions))
+
+(defn layout [instructions]
+  (->> instructions
+      (map expand-string)
+      flatten
+      layout-simple
+      :memory))

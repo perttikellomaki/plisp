@@ -12,7 +12,7 @@
       (str/split #"\n")))
 
 (def lisp-source
-  (->> (map parser/parse-line lisp-source-text)
+  (->> (map-indexed parser/parse-line lisp-source-text)
       (filter #(not= (:op %) :empty))))
 
 
