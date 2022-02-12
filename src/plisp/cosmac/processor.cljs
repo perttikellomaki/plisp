@@ -24,6 +24,7 @@
     :input-buffer input-buffer
     :output-buffer []
     :status :running
+    :instruction-count 0
     }))
 
 ;;;
@@ -293,4 +294,4 @@
                           )
                final-state (when effect
                              (execute-instruction processor effect))]
-           final-state))))))
+           (update-in final-state [:instruction-count] inc)))))))

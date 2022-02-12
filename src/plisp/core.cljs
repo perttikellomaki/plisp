@@ -2,6 +2,7 @@
   (:require
    [reagent.dom :as rdom]
    [re-frame.core :as re-frame]
+   [district0x.re-frame.interval-fx]
    [plisp.events :as events]
    [plisp.views :as views]
    [plisp.config :as config]

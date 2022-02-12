@@ -9,6 +9,7 @@
 
   [reagent "1.1.0"]
   [re-frame "1.2.0"]
+  [district0x/re-frame-interval-fx "1.0.2"]
 
   [binaryage/devtools "1.0.4"]
   [re-frisk "1.5.2"]
