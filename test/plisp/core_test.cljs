@@ -35,7 +35,8 @@
   (let [changes
         (run-prog
          ["  IDLE"])]
-    (is (= {:R [1]
+    (is (= {:R {0 {:lo 1}}
+            :instruction-count 1
             :status :idle}
            changes))))
 
@@ -48,7 +49,9 @@
           "  BYTE #12"]
          {:n 2})]
     (is (= {:D 0x12
-            :R [5 0xfffe]}
+            :R {0 {:lo 0x05}
+                1 {:hi 0xff :lo 0xfe}}
+            :instruction-count 2}
            changes))))
 
 (deftest test-inc
@@ -56,13 +59,17 @@
         (run-prog
          ["  INC 1"])]
     (is (= changes
-           {:R [1 1]})))
+           {:R {0 {:lo 0x01}
+                1 {:lo 0x01}}
+            :instruction-count 1})))
   (let [changes
         (run-prog
          ["  RLDI 5 #ffff"
           "  INC 5"
           "  INC 5"])]
-    (is (= {:R [6 nil nil nil nil 0x0001]}
+    (is (= {:R {0 {:lo 6}
+                5 {:lo 0x01}}
+            :instruction-count 3}
            changes))))
 
 (deftest test-dec
@@ -71,12 +78,16 @@
          ["  RLDI 1 #1234"
           "  DEC 1"])]
     (is (= changes
-           {:R [5 0X1233]})))
+           {:R {0 {:lo 0x05}
+                1 {:hi 0x12 :lo 0x33}}
+            :instruction-count 2})))
   (let [changes
         (run-prog
          ["  DEC 5"
           "  DEC 5"])]
-    (is (= {:R [2 nil nil nil nil 0xfffe]}
+    (is (= {:R {0 {:lo 0x02}
+                5 {:hi 0xff :lo 0xfe}}
+            :instruction-count 2}
            changes))))
 
 (deftest test-br
@@ -87,7 +98,8 @@
           "  LDI #34"]
          {:n 2})]
     (is (= {:D 0x12
-            :R [0x0006]}
+            :R {0 {:lo 0x06}}
+            :instruction-count 2}
            changes))))
 
 (deftest test-bz
@@ -97,7 +109,8 @@
           "  BZ 08"
           "  LDI #34"]
          {:n 2})]
-    (is (= {:R [0x0008]}
+    (is (= {:R {0 {:lo 0x08}}
+            :instruction-count 2}
            changes)))
   (let [changes
         (run-prog
@@ -105,7 +118,8 @@
           "  BZ 06"
           "  LDI #34"])]
     (is (= {:D 0x34
-            :R [0x0006]}
+            :R {0 {:lo 0x06}}
+            :instruction-count 3}
            changes))))
 
 (deftest test-bdf
@@ -116,8 +130,9 @@
           "  BDF 10"
           "  LDI #34"]
          {:n 3})]
-    (is (= {:R [0x0010]
-            :DF 1}
+    (is (= {:R {0 {:lo 0x10}}
+            :DF 1
+            :instruction-count 3}
            changes)))
   (let [changes
         (run-prog
@@ -126,7 +141,8 @@
           "  BDF 10"
           "  LDI #34"])]
     (is (= {:D 0x34
-            :R [0x0008]}
+            :R {0 {:lo 0x08}}
+            :instruction-count 4}
            changes))))
 
 (deftest test-skp
@@ -137,7 +153,9 @@
           "  INC 1"
           "  NOP"]
          {:n 3})]
-    (is (= {:R [0x0007 0x1234]}
+    (is (= {:R {0 {:lo 0x07}
+                1 {:hi 0x12 :lo 0x34}}
+            :instruction-count 3}
            changes))))
 
 (deftest test-bnz
@@ -148,7 +166,8 @@
           "  LDI #34"]
          {:n 2})]
     (is (= {:D 0x12
-            :R [0x0006]}
+            :R {0 {:lo 0x06}}
+            :instruction-count 2}
            changes)))
   (let [changes
         (run-prog
@@ -157,7 +176,8 @@
           "  LDI #34"]
          {:n 3})]
     (is (= {:D 0x34
-            :R [0x0006]}
+            :R {0 {:lo 0x06}}
+            :instruction-count 3}
            changes))))
 
 (deftest test-lda
@@ -169,9 +189,11 @@
           "  BYTE #12"]
          {:n 2})]
     (is (= {:D 0x12
-            :R [5 0xffff]}
+            :R {0 {:lo 0x05}
+                1 {:hi 0xff :lo 0xff}}
+            :instruction-count 2}
            changes)))
-    (let [changes
+  (let [changes
         (run-prog
          ["  RLDI 1 #fffe"
           "  LDA 1"
@@ -181,7 +203,8 @@
           "  BYTE #34"]
          {:n 3})]
     (is (= {:D 0x34
-            :R [6]} ; R1 wraps over to zero
+            :R {0 {:lo 0x06}} ; R1 wraps over to zero
+            :instruction-count 3}
            changes))))
 
 (deftest test-str
@@ -191,7 +214,9 @@
           "  LDI #12"
           "  STR 1"])]
     (is (= {:D 0x12
-            :R [7 0xffff]
+            :R {0 {:lo 0x07}
+                1 {:hi 0xff :lo 0xff}}
+            :instruction-count 3
             :mem {0xffff (processor/mem-byte 0x12)}}
            changes))))
 
@@ -205,8 +230,11 @@
           "  BYTE #12"
           "  BYTE #34"]
          {:n 3})]
-    (is (= {:R [7 0x0102 0X1234]
-            :X 1}
+    (is (= {:R {0 {:lo 0x07}
+                1 {:hi 0x01 :lo 0x02}
+                2 {:hi 0x12 :lo 0x34}}
+            :X 1
+            :instruction-count 3}
            changes))))
 
 (deftest test-scal-sret
@@ -228,13 +256,18 @@
           "  RLDI 4 #0440"
           "  SRET 1"]
          {:n 12})]
-    (is (= {:R [14 nil 0xffff 0x0330 0x0440 0x0550]
+    (is (= {:R {0 {:lo 14}
+                2 {:hi 0xff :lo 0xff}
+                3 {:hi 0x03 :lo 0x30}
+                4 {:hi 0x04 :lo 0x40}
+                5 {:hi 0x05 :lo 0x50}}
             :D 0x30
             :X 2
             :mem {0xfffc (processor/mem-byte 0x00)
                   0xfffd (processor/mem-byte 0x0a)
                   0xfffe (processor/mem-byte 0x00)
-                  0xffff (processor/mem-byte 0x00)}}
+                  0xffff (processor/mem-byte 0x00)}
+            :instruction-count 12}
            changes))))
 
 (deftest test-rsxd
@@ -244,10 +277,13 @@
           "  RLDI 2 #ffff"
           "  SEX 2"
           "  RSXD 1"])]
-    (is (= {:R [11 0x1234 0Xfffd]
+    (is (= {:R {0 {:lo 0x0b}
+                1 {:hi 0x12 :lo 0x34}
+                2 {:hi 0xff :lo 0xfd}}
             :X 2
             :mem {0xfffe (processor/mem-byte 0x12)
-                  0xffff (processor/mem-byte 0x34)}}
+                  0xffff (processor/mem-byte 0x34)}
+            :instruction-count 4}
            changes))))
 
 (deftest test-rnx
@@ -256,15 +292,20 @@
          ["  RLDI 1 #1234"
           "  SEX 2"
           "  RNX 1"])]
-    (is (= {:R [0x007 0x1234 0X1234]
-            :X 2}
+    (is (= {:R {0 {:lo 0x07}
+                1 {:hi 0x12 :lo 0x34}
+                2 {:hi 0x12 :lo 0x34}}
+            :X 2
+            :instruction-count 3}
            changes))))
 
 (deftest test-rldi
   (let [changes
         (run-prog
          ["  RLDI 1 #1234"])]
-    (is (= {:R [4 0x1234]}
+    (is (= {:R {0 {:lo 0x04}
+                1 {:hi 0x12 :lo 0x34}}
+            :instruction-count 1}
            changes))))
 
 (deftest test-stxd
@@ -276,8 +317,10 @@
           "  STXD"])]
     (is (= {:D 0x34
             :X 1
-            :R [0x0008 0x00ff]
-            :mem {0x0100 (processor/mem-byte 0x34)}}
+            :R {0 {:lo 0x08}
+                1 {:lo 0xff}}
+            :mem {0x0100 (processor/mem-byte 0x34)}
+            :instruction-count 4}
            changes))))
 
 (deftest test-adci
@@ -290,7 +333,9 @@
           "  LDI #00"
           "  ADCI #00"
           "  PHI 1"])]
-    (is (= {:R [0x000a 0x0003]}
+    (is (= {:R {0 {:lo 0x0a}
+                1 {:lo 0x03}}
+            :instruction-count 6}
            changes)))
   (let [changes
         (run-prog
@@ -302,7 +347,9 @@
           "  ADCI #00"
           "  PHI 1"])]
     (is (= {:D 0x01
-            :R [0x000a 0x0101]}
+            :R {0 {:lo 0x0a}
+                1 {:hi 0x01 :lo 0x01}}
+            :instruction-count 6}
            changes))))
 
 (deftest test-smbi
@@ -316,7 +363,9 @@
           "  SMBI #00"
           "  PHI 1"])]
     (is (= {:D 0xff
-            :R [0x000a 0xffff]}
+            :R {0 {:lo 0x0a}
+                1 {:hi 0xff :lo 0xff}}
+            :instruction-count 6}
            changes)))
   (let [changes
         (run-prog
@@ -329,7 +378,9 @@
           "  PHI 1"])]
     (is (= {:D 0x44
             :DF 1
-            :R [0x000a 0x4444]}
+            :R {0 {:lo 0x0a}
+                1 {:hi 0x44 :lo 0x44}}
+            :instruction-count 6}
            changes)))
   (let [changes
         (run-prog
@@ -341,7 +392,9 @@
           "  SMBI #56"
           "  PHI 1"])]
     (is (= {:D 0xbb
-            :R [0x000a 0xbbbc]}
+            :R {0 {:lo 0x0a}
+                1 {:hi 0xbb :lo 0xbc}}
+            :instruction-count 6}
            changes))))
 
 (deftest test-plo-glo
@@ -353,7 +406,9 @@
           "  LDI #34"
           "  GLO 1"])]
     (is (= {:D 0x12
-            :R [0x000a 0xff12]}
+            :R {0 {:lo 0x0a}
+                1 {:hi 0xff :lo 0x12}}
+            :instruction-count 5}
            changes))))
 
 (deftest test-phi-ghi
@@ -365,7 +420,9 @@
           "  LDI #34"
           "  GHI 1"])]
     (is (= {:D 0x12
-            :R [0x000a 0x12ff]}
+            :R {0 {:lo 0x0a}
+                1 {:hi 0x12 :lo 0xff}}
+            :instruction-count 5}
            changes))))
 
 (deftest test-lbr
@@ -376,14 +433,16 @@
           "  LDI #34"]
          {:n 2})]
     (is (= {:D 0x12
-            :R [0x2000]}
+            :R {0 {:hi 0x20}}
+            :instruction-count 2}
            changes))))
 
 (deftest test-nop
   (let [changes
         (run-prog
          ["  NOP"])]
-    (is (= {:R [1]}
+    (is (= {:R {0 {:lo 0x01}}
+            :instruction-count 1}
            changes))))
 
 (deftest test-lsnz
@@ -394,7 +453,8 @@
           "  LDI #34"]
          {:n 2})]
     (is (= {:D 0x12
-            :R [0x0005]}
+            :R {0 {:lo 0x05}}
+            :instruction-count 2}
            changes)))
   (let [changes
         (run-prog
@@ -402,7 +462,8 @@
           "  LSNZ"
           "  LDI #34"])]
     (is (= {:D 0x34
-            :R [0x0005]}
+            :R {0 {:lo 0x05}}
+            :instruction-count 3}
            changes))))
 
 (deftest test-lskp
@@ -413,7 +474,8 @@
           "  LDI #34"]
          {:n 2})]
     (is (= {:D 0x12
-            :R [0x0005]}
+            :R {0 {:lo 0x05}}
+            :instruction-count 2}
            changes))))
 
 (deftest test-lbnz
@@ -426,7 +488,8 @@
           "  NOP"]
          {:n 3})]
     (is (= {:D 0x12
-            :R [0x0101]}
+            :R {0 {:hi 0x01 :lo 0x01}}
+            :instruction-count 3}
            changes)))
   (let [changes
         (run-prog
@@ -437,7 +500,8 @@
           "  NOP"]
          {:n 3})]
     (is (= {:D 0x34
-            :R [0x0007]}
+            :R {0 {:lo 0x07}}
+            :instruction-count 3}
            changes))))
 
 (deftest test-lsz
@@ -447,7 +511,8 @@
           "  LSZ"
           "  LDI #34"]
          {:n 2})]
-    (is (= {:R [0x0005]}
+    (is (= {:R {0 {:lo 0x05}}
+            :instruction-count 2}
            changes)))
   (let [changes
         (run-prog
@@ -455,7 +520,8 @@
           "  LSZ"
           "  LDI #34"])]
     (is (= {:D 0x34
-            :R [0x0005]}
+            :R {0 {:lo 0x05}}
+            :instruction-count 3}
            changes))))
 
 (deftest test-sep
@@ -463,12 +529,13 @@
         (run-prog
          ["  LDI #12"
           "  RLDI 1 #0009"
-          "  SEP 1"
-          "  LDI #34"]
+          "  SEP 1"]
          {:n 3})]
     (is (= {:D 0x12
             :P 1
-            :R [0x0007 0x0009]}
+            :R {0 {:lo 0x07}
+                1 {:lo 0x09}}
+            :instruction-count 3}
            changes))))
 
 (deftest test-sex
@@ -476,7 +543,8 @@
         (run-prog
          ["  SEX 1"])]
     (is (= {:X 1
-            :R [0x0001]}
+            :R {0 {:lo 0x01}}
+            :instruction-count 1}
            changes))))
 
 (deftest test-or
@@ -490,7 +558,9 @@
           "  OR"])]
     (is (= {:D 0xff
             :X 1
-            :R [0x000b 0x0100]
+            :R {0 {:lo 0x0b}
+                1 {:hi 0x01}}
+            :instruction-count 6
             :mem {0x0100 {:op :byte, :value 0x0f}}}
            changes))))
 
@@ -505,7 +575,9 @@
           "  XOR"])]
     (is (= {:D 0xf0
             :X 1
-            :R [0x000b 0x0100]
+            :R {0 {:lo 0x0b}
+                1 {:hi 0x01}}
+            :instruction-count 6
             :mem {0x0100 {:op :byte, :value 0x0f}}}
            changes))))
 
@@ -520,7 +592,9 @@
           "  ADD"])]
     (is (= {:D 0x03
             :X 1
-            :R [0x000b 0x0100]
+            :R {0 {:lo 0x0b}
+                1 {:hi 0x01}}
+            :instruction-count 6
             :mem {0x0100 {:op :byte, :value 0x01}}}
            changes)))
   (let [changes
@@ -534,7 +608,9 @@
     (is (= {:D 0x01
             :DF 1
             :X 1
-            :R [0x000b 0x0100]
+            :R {0 {:lo 0x0b}
+                1 {:hi 0x01}}
+            :instruction-count 6
             :mem {0x0100 {:op :byte, :value 0xff}}}
            changes))))
 
@@ -549,7 +625,9 @@
           "  SD"])]
     (is (= {:D 0xff
             :X 1
-            :R [0x000b 0x0100]
+            :R {0 {:lo 0x0b}
+                1 {:hi 0x01}}
+            :instruction-count 6
             :mem {0x0100 {:op :byte, :value 0x01}}}
            changes)))
   (let [changes
@@ -563,7 +641,9 @@
     (is (= {:D 0xfe
             :DF 1
             :X 1
-            :R [0x000b 0x0100]
+            :R {0 {:lo 0x0b}
+                1 {:hi 0x01}}
+            :instruction-count 6
             :mem {0x0100 {:op :byte, :value 0xff}}}
            changes))))
 
@@ -573,7 +653,8 @@
          ["  LDI #AA"
           "  SHR"])]
     (is (= {:D 0x55
-            :R [0x0003]}
+            :R {0 {:lo 0x03}}
+            :instruction-count 2}
            changes)))
   (let [changes
         (run-prog
@@ -581,7 +662,8 @@
           "  SHR"])]
     (is (= {:D 0x2a
             :DF 1
-            :R [0x0003]}
+            :R {0 {:lo 0x03}}
+            :instruction-count 2}
            changes))))
 
 (deftest test-ldi
@@ -589,7 +671,8 @@
         (run-prog
          ["  LDI #12"])]
     (is (= {:D 0x12
-            :R [2]}
+            :R {0 {:lo 0x02}}
+            :instruction-count 1}
            changes))))
 
 (deftest test-ori
@@ -598,7 +681,8 @@
          ["  LDI #0f"
           "  ORI #f0"])]
     (is (= {:D 0xff
-            :R [4]}
+            :R {0 {:lo 0x04}}
+            :instruction-count 2}
            changes))))
 
 (deftest test-ani
@@ -607,7 +691,8 @@
          ["  LDI #12"
           "  ANI #0f"])]
     (is (= {:D 0x02
-            :R [4]}
+            :R {0 {:lo 0x04}}
+            :instruction-count 2}
            changes))))
 
 (deftest test-xri
@@ -616,7 +701,8 @@
          ["  LDI #12"
           "  XRI #34"])]
     (is (= {:D 0x26
-            :R [4]}
+            :R {0 {:lo 0x04}}
+            :instruction-count 2}
            changes))))
 
 (deftest test-adi
@@ -625,7 +711,8 @@
          ["  LDI #34"
           "  ADI #12"])]
     (is (= {:D 0x46
-            :R [4]}
+            :R {0 {:lo 0x04}}
+            :instruction-count 2}
            changes)))
   (let [changes
         (run-prog
@@ -633,7 +720,8 @@
           "  ADI #03"])]
     (is (= {:D 0x01
             :DF 1
-            :R [4]}
+            :R {0 {:lo 0x04}}
+            :instruction-count 2}
            changes))))
 
 (deftest test-smi
@@ -643,14 +731,16 @@
           "  SMI #12"])]
     (is (= {:D 0x22
             :DF 1
-            :R [4]}
+            :R {0 {:lo 0x04}}
+            :instruction-count 2}
            changes)))
   (let [changes
         (run-prog
          ["  LDI #01"
           "  SMI #02"])]
     (is (= {:D 0xff
-            :R [4]}
+            :R {0 {:lo 0x04}}
+            :instruction-count 2}
            changes))))
 
 (deftest test-byte
@@ -660,7 +750,8 @@
           "  BYTE #12"
           "  BYTE #34"]
          {:n 1})]
-    (is (= {:R [0x1234]}
+    (is (= {:R {0 {:hi 0x12 :lo 0x34}}
+            :instruction-count 1}
            changes))))
 
 (deftest test-printchar []
@@ -670,7 +761,7 @@
            ["  LDI #31"
             "  PRINTCHAR"])]
       (is (= {:output-buffer ["1"]}
-             (dissoc changes :D :R)))))
+             (dissoc changes :D :R :instruction-count)))))
   (testing "Print multiple characters"
     (let [changes
           (run-prog
@@ -682,7 +773,7 @@
             "  LDI #42"
             "  PRINTCHAR"])]
       (is (= {:output-buffer ["1" "1" "A" "B"]}
-             (dissoc changes :D :R))))))
+             (dissoc changes :D :R :instruction-count))))))
 
 (deftest test-readchar []
   (testing "Read single character"
@@ -691,7 +782,8 @@
            ["  READCHAR"]
            {:input ["0" "1"]})]
       (is (= {:D (.charCodeAt "0")
-              :R [0x0001]
+              :R {0 {:lo 0x01}}
+              :instruction-count 1
               :input-buffer ["1"]}
              changes))))
   (testing "Read multiple characters"
@@ -702,7 +794,8 @@
             "  READCHAR"]
            {:input ["0" "1" "2" "3"]})]
       (is (= {:D (.charCodeAt "2")
-              :R [0x0003]
+              :R {0 {:lo 0x03}}
+              :instruction-count 3
               :input-buffer ["3"]}
              changes))))
   (testing "Read blocking"
@@ -711,12 +804,12 @@
            ["  READCHAR"
             "  READCHAR"]
            {:input ["0"]})]
-      (is (= (dissoc {:R [1]
-                      :D (.charCodeAt "0")
-                      :input-buffer []
-                      :status :read-blocked}
-                     :input-buffer)
-             (dissoc changes :input-buffer)))
+      (is (= {:D (.charCodeAt "0")
+              :R {0 {:lo 0x01}}
+              :input-buffer nil
+              :instruction-count 2
+              :status :read-blocked}
+             changes))
       (is (empty? (:input-buffer changes))))))
             
 ;;;
