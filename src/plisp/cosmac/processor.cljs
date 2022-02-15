@@ -10,8 +10,9 @@
 ;;; convenient for running tests.
 ;;;
 
-(defn- int16->reg [int16]
-  {:hi (quot int16 0x100) :lo (bit-and int16 0xff)})
+(defn- reg16 [x]
+  (let [int16 (bit-and 0xffff x)]
+    {:hi (quot int16 0x100) :lo (bit-and int16 0xff)}))
 
 (defn- int16 [reg]
   (+ (* (:hi reg) 256) (:lo reg)))
@@ -32,7 +33,7 @@
     :P 0x0
     :X 0x0
     :R (-> zeroed-registers
-           (assoc 0 (int16->reg start-addr)))
+           (assoc 0 (reg16 start-addr)))
     :mem prog
     :input-buffer input-buffer
     :output-buffer []
@@ -71,7 +72,7 @@
      (when instruction
        (assoc-in processor
                  [:R (:P processor)]
-                 (int16->reg (+ pc (:bytes instruction)))))]))
+                 (reg16 (+ pc (:bytes instruction)))))]))
 
 ;;;
 ;;; Helpers for implementing instuction semantics.
@@ -82,17 +83,12 @@
 (defn inc16 [reg]
   (-> (int16 reg)
       inc
-      (bit-and 0xffff)
-      int16->reg))
+      reg16))
 
 (defn dec16 [reg]
   (-> (int16 reg)
       dec
-      (bit-and 0xffff)
-      int16->reg))
-
-(defn replace-lo [value byte]
-  (bit-or (bit-and value 0xff00) byte))
+      reg16))
 
 (defn short-branch [page-address condition pc]
   (if condition
@@ -101,7 +97,7 @@
 
 (defn long-branch [long-address condition pc]
   (if condition
-    (int16->reg long-address)
+    (reg16 long-address)
     pc))
 
 ;;;
@@ -125,137 +121,127 @@
 (defn- instruction-effect
   [{:keys [op n immediate long-immediate page-address long-address value] :as _instruction}
    {:keys [input-buffer output-buffer] :as _processor}
-   {:keys [P X D DF mem R]}
-   instruction-addr]
-  (case op
-    :IDLE [[:status]               (fn [] :idle)]
-    :LDN  [[:D]                    (fn [] (mem (R n)))]
-    :INC  [[:R n]                  (fn [] (inc16 (R n)))]
-    :DEC  [[:R n]                  (fn [] (dec16 (R n)))]
-    :BR   [[:R (P) :lo]            (fn [] (short-branch page-address true (R (P))))]
-    :BZ   [[:R (P) :lo]            (fn [] (short-branch page-address (= (D) 0) (R (P))))]
-    :BDF  [[:R (P) :lo]            (fn [] (short-branch page-address (= (DF) 1) (R (P))))]
-    :SKP  [[:R (P)]                (fn [] (inc16 (R (P))))]
-    :BNZ  [[:R (P) :lo]            (fn [] (short-branch page-address (not= (D) 0) (R (P))))]
-    :LDA  [[:D]                    (fn [] (mem (R n)))
-          [:R n]                   (fn [] (inc16 (R n)))]
-    :STR  [[:mem (int16 (R n))]    (fn [] (mem-byte (D)))]
-    :RLXA [[:R (X)]                (fn [] (inc16 (inc16 (R (X)))))
-           [:R n :hi]              (fn [] (mem (R (X))))
-           [:R n :lo]              (fn [] (mem (inc16 (R (X)))))]
-    :SCAL [[:mem (int16 (R (X)))]  (fn [] (mem-byte (:lo (R n))))
-           [:mem (int16 (dec16 (R (X))))]
-                                   (fn [] (mem-byte (:hi (R n))))
-           [:R (X)]                (fn [] (dec16 (dec16 (R (X)))))
-           [:R n]                  (fn [] (R (P)))
-           [:R (P)]                (fn [] (int16->reg long-address))]
-    :SRET [[:R (P)]                (fn [] (R n))
-           [:R n :hi]              (fn [] (mem (inc16 (R (X)))))
-           [:R n :lo]              (fn [] (mem (inc16 (inc16 (R (X))))))
-           [:R (X)]                (fn [] (inc16 (inc16 (R (X)))))]
-    :RSXD [[:mem (int16 (R (X)))]  (fn [] (mem-byte (:lo (R n))))
-           [:mem (int16 (dec16 (R (X))))]
-                                   (fn [] (mem-byte (:hi (R n))))
-           [:R (X)]                (fn [] (dec16 (dec16 (R (X)))))]
-    :RNX  [[:R (X)]                (fn [] (R n))]
-    :RLDI [[:R n]                  (fn [] (int16->reg long-immediate))]
-    :STXD [[:mem (int16 (R (X)))]  (fn [] (mem-byte (D)))
-           [:R (X)]                (fn [] (dec16 (R (X))))]
-    :ADCI [[:D]                    (fn [] (bit-and 0xff (+ (D) (DF) immediate)))
-           [:DF]                   (fn [] (if (> (+ (D) (DF) immediate) 0xff) 1 0))]
-    :SMBI [[:D]                    (fn [] (bit-and
-                                           0xff
-                                           (- (D)
-                                              immediate
-                                              (if (= (DF) 0) 1 0))))
-           [:DF]                   (fn [] (if (>= (- (D)
-                                                     immediate
-                                                     (if (= (DF) 0) 1 0))
-                                                  0)
-                                            1
-                                            0))]
-    :GLO  [[:D]                    (fn [] (:lo (R n)))]
-    :GHI  [[:D]                    (fn [] (:hi (R n)))]
-    :PLO  [[:R n :lo]              (fn [] (D))]
-    :PHI  [[:R n :hi]              (fn [] (D))]
-    :LBR  [[:R (P)]                (fn [] (int16->reg long-address))]
-    :NOP  []
-    :LSNZ [[:R (P)]                (fn [] (if (not= (D) 0)
-                                            (inc16 (inc16 (R (P))))
-                                            (R (P))))]
-    :LSKP [[:R (P)]                (fn [] (inc16 (inc16 (R (P)))))]
-    :LBNZ [[:R (P)]                (fn [] (long-branch long-address
-                                                       (not= (D) 0)
-                                                       (R (P))))]
-    :LSZ  [[:R (P)]                (fn [] (if (= (D) 0)
-                                            (inc16 (inc16 (R (P))))
-                                            (R (P))))]
-    :SEP  [[:P]                    (fn [] n)]
-    :SEX  [[:X]                    (fn [] n)]
-    :OR   [[:D]                    (fn [] (bit-or (D) (mem (R (X)))))]
-    :XOR  [[:D]                    (fn [] (bit-xor (D) (mem (R (X)))))]
-    :ADD  [[:D]                    (fn [] (bit-and 0xff (+ (D) (mem (R (X))))))
-           [:DF]                   (fn [] (if (> (+ (D) (mem (R (X)))) 0xff) 1 0))]
-    :SD   [[:D]                    (fn [] (bit-and 0xff (- (mem (R (X))) (D))))
-           [:DF]                   (fn [] (if (>= (mem (R (X))) (D)) 1 0))]
-    :SHR  [[:D]                    (fn [] (bit-shift-right (D) 1))
-           [:DF]                   (fn [] (bit-and 0x01 (D)))]
-    :LDI  [[:D]                    (fn [] immediate)]
-    :ORI  [[:D]                    (fn [] (bit-or (D) immediate))]
-    :ANI  [[:D]                    (fn [] (bit-and (D) immediate))]
-    :XRI  [[:D]                    (fn [] (bit-xor (D) immediate))]
-    :ADI  [[:D]                    (fn [] (bit-and 0xff (+ (D) immediate)))
-           [:DF]                   (fn [] (if (> (+ (D) immediate) 0xff) 1 0))]
-    :SMI  [[:D]                    (fn [] (bit-and 0xff (- (D) immediate)))
-           [:DF]                   (fn [] (if (>= (D) immediate) 1 0))]
-    :PRINTCHAR
-          [[:output-buffer]        (fn [] (conj output-buffer (char (D))))]
-    :READCHAR
-          (if (empty? input-buffer)
-            ;; Undo instruction fetch, i.e. block
-            [[:R (P)]
-             (fn [] (int16->reg instruction-addr))
-             [:status]
-             (fn [] :read-blocked)]
-            [[:D]
-             (fn [] (.charCodeAt (first input-buffer)))
-             [:input-buffer]
-             (fn []
-               (rest input-buffer))])
+   {:keys [P X D DF mem R]}]
 
-          ;; Just enough support for executing hex coded instructions
-          ;; to get the Lisp running.
-    :byte (if (= value 0xc0)
-            [[:R (P) :hi]
-             (fn [] (mem (R (P))))
-             [:R (P) :lo]
-             (fn [] (mem (inc16 (R (P)))))]
-            []) ; silent NOP
-    ))
+  (let [the identity] ; syntactic sugar
+    (case op
+      :IDLE [[:status]                      #(the :idle)]
+      :LDN  [[:D]                           #(mem (R n))]
+      :INC  [[:R n]                         #(inc16 (R n))]
+      :DEC  [[:R n]                         #(dec16 (R n))]
+      :BR   [[:R (P) :lo]                   #(short-branch page-address true (R (P)))]
+      :BZ   [[:R (P) :lo]                   #(short-branch page-address (= (D) 0) (R (P)))]
+      :BDF  [[:R (P) :lo]                   #(short-branch page-address (= (DF) 1) (R (P)))]
+      :SKP  [[:R (P)]                       #(inc16 (R (P)))]
+      :BNZ  [[:R (P) :lo]                   #(short-branch page-address (not= (D) 0) (R (P)))]
+      :LDA  [[:D]                           #(mem (R n))
+             [:R n]                         #(inc16 (R n))]
+      :STR  [[:mem (int16 (R n))]           #(mem-byte (D))]
+      :RLXA [[:R (X)]                       #(inc16 (inc16 (R (X))))
+             [:R n :hi]                     #(mem (R (X)))
+             [:R n :lo]                     #(mem (inc16 (R (X))))]
+      :SCAL [[:mem (int16 (R (X)))]         #(mem-byte (:lo (R n)))
+             [:mem (int16 (dec16 (R (X))))] #(mem-byte (:hi (R n)))
+             [:R (X)]                       #(dec16 (dec16 (R (X))))
+             [:R n]                         #(R (P))
+             [:R (P)]                       #(reg16 long-address)]
+      :SRET [[:R (P)]                       #(R n)
+             [:R n :hi]                     #(mem (inc16 (R (X))))
+             [:R n :lo]                     #(mem (inc16 (inc16 (R (X)))))
+             [:R (X)]                       #(inc16 (inc16 (R (X))))]
+      :RSXD [[:mem (int16 (R (X)))]         #(mem-byte (:lo (R n)))
+             [:mem (int16 (dec16 (R (X))))] #(mem-byte (:hi (R n)))
+             [:R (X)]                       #(dec16 (dec16 (R (X))))]
+      :RNX  [[:R (X)]                       #(R n)]
+      :RLDI [[:R n]                         #(reg16 long-immediate)]
+      :STXD [[:mem (int16 (R (X)))]         #(mem-byte (D))
+             [:R (X)]                       #(dec16 (R (X)))]
+      :ADCI [[:D]                           #(bit-and 0xff (+ (D) (DF) immediate))
+             [:DF]                          #(if (> (+ (D) (DF) immediate) 0xff) 1 0)]
+      :SMBI [[:D]                           #(bit-and
+                                              0xff
+                                              (- (D)
+                                                 immediate
+                                                 (if (= (DF) 0) 1 0)))
+             [:DF]                          #(if (>= (- (D) immediate
+                                                        (if (= (DF) 0) 1 0))
+                                                     0)
+                                               1
+                                               0)]
+      :GLO  [[:D]                           #(:lo (R n))]
+      :GHI  [[:D]                           #(:hi (R n))]
+      :PLO  [[:R n :lo]                     #(D)]
+      :PHI  [[:R n :hi]                     #(D)]
+      :LBR  [[:R (P)]                       #(reg16 long-address)]
+      :NOP  []
+      :LSNZ [[:R (P)]                       #(if (not= (D) 0)
+                                               (inc16 (inc16 (R (P))))
+                                               (R (P)))]
+      :LSKP [[:R (P)]                       #(inc16 (inc16 (R (P))))]
+      :LBNZ [[:R (P)]                       #(long-branch long-address
+                                                          (not= (D) 0)
+                                                          (R (P)))]
+      :LSZ  [[:R (P)]                       #(if (= (D) 0)
+                                               (inc16 (inc16 (R (P))))
+                                               (R (P)))]
+      :SEP  [[:P]                           #(the n)]
+      :SEX  [[:X]                           #(the n)]
+      :OR   [[:D]                           #(bit-or (D) (mem (R (X))))]
+      :XOR  [[:D]                           #(bit-xor (D) (mem (R (X))))]
+      :ADD  [[:D]                           #(bit-and 0xff (+ (D) (mem (R (X)))))
+             [:DF]                          #(if (> (+ (D) (mem (R (X)))) 0xff) 1 0)]
+      :SD   [[:D]                           #(bit-and 0xff (- (mem (R (X))) (D)))
+             [:DF]                          #(if (>= (mem (R (X))) (D)) 1 0)]
+      :SHR  [[:D]                           #(bit-shift-right (D) 1)
+             [:DF]                          #(bit-and 0x01 (D))]
+      :LDI  [[:D]                           #(the immediate)]
+      :ORI  [[:D]                           #(bit-or (D) immediate)]
+      :ANI  [[:D]                           #(bit-and (D) immediate)]
+      :XRI  [[:D]                           #(bit-xor (D) immediate)]
+      :ADI  [[:D]                           #(bit-and 0xff (+ (D) immediate))
+             [:DF]                          #(if (> (+ (D) immediate) 0xff) 1 0)]
+      :SMI  [[:D]                           #(bit-and 0xff (- (D) immediate))
+             [:DF]                          #(if (>= (D) immediate) 1 0)]
+      :PRINTCHAR
+            [[:output-buffer]               #(conj output-buffer (char (D)))]
+      :READCHAR
+            [[:D]                           #(.charCodeAt (first input-buffer))
+             [:status]                      #(if (= (count input-buffer) 1) :read-blocked :running)
+             [:input-buffer]                #(rest input-buffer)]
+
+    ;; Just enough support for executing hex coded instructions
+    ;; to get the Lisp running.
+      :byte
+      (if (= value 0xc0)
+        [[:R (P) :hi]                   #(mem (R (P)))
+         [:R (P) :lo]                   #(mem (inc16 (R (P))))]
+
+          ;; Silent NOP for unknown hex instructions
+        []))))
 
 (defn next-state
   "Return the next state of the processor after executing one instruction."
-  ([initial-processor]
-   (let [instruction-addr (int16
-                           (get-in initial-processor
-                                   [:R (:P initial-processor)]))
-         [instruction processor] (instruction-fetch initial-processor)]
-     (when instruction
-       (letfn
-           [(P [] (:P processor))
-            (X [] (:X processor))
-            (D [] (:D processor))
-            (DF [] (:DF processor))
-            (mem [reg]
-              (let [addr (int16 reg)]
-                ;; assume uninitialized memory is zeroed out
-                (or (:value (get-in processor [:mem addr]))
-                    0x00)))
-            (R [n] (get-in processor [:R n]))]
-         (let [effect (instruction-effect instruction
-                                          processor
-                                          {:P P :X X :D D :DF DF :mem mem :R R}
-                                          instruction-addr)
-               final-state (when effect
-                             (execute-instruction processor effect))]
-           (update-in final-state [:instruction-count] inc)))))))
+  [initial-state]
+  (if (or (= (:status initial-state) :idle)
+          (and (= (:status initial-state) :read-blocked)
+               (empty? (:input-buffer initial-state))))
+
+    ;; No instruction fetch if waiting for input
+    initial-state
+
+    (let [[instruction processor] (instruction-fetch initial-state)]
+      (when instruction
+        (let [effect (instruction-effect instruction
+                                         processor
+                                           ;; Convenience accessors
+                                         {:P   #(:P processor)
+                                          :X   #(:X processor)
+                                          :D   #(:D processor)
+                                          :DF  #(:DF processor)
+                                          :mem #(or (:value (get-in processor [:mem (int16 %)]))
+                                                      ;; assume uninitialized memory is zeroed out
+                                                    0x00)
+                                          :R   #(get-in processor [:R %])})
+              final-state (when effect
+                            (execute-instruction processor effect))]
+          (update-in final-state [:instruction-count] inc))))))
