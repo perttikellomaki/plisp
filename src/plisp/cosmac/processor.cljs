@@ -119,7 +119,7 @@
 ;;;
 
 (defn- instruction-effect
-  [{:keys [op n immediate long-immediate page-address long-address value] :as _instruction}
+  [{:keys [op n immediate long-immediate page-address long-address value] :as instruction}
    {:keys [input-buffer output-buffer] :as _processor}
    {:keys [P X D DF mem R]}]
 
@@ -205,8 +205,12 @@
       :PRINTCHAR
             [[:output-buffer]               #(conj output-buffer (char (D)))]
       :READCHAR
-            [[:D]                           #(.charCodeAt (first input-buffer))
-             [:status]                      #(if (= (count input-buffer) 1) :read-blocked :running)
+            [[:D]                           #(if (empty? input-buffer) (D) (.charCodeAt (first input-buffer)))
+             [:status]                      #(if (empty? input-buffer) :read-blocked :running)
+             [:R (P)]                       #(if (empty? input-buffer)
+                                               ;; back up R(P) to point to the READCHAR instruction
+                                               (reg16 (- (int16 (R (P))) (:bytes instruction)))
+                                               (R (P)))
              [:input-buffer]                #(rest input-buffer)]
 
     ;; Just enough support for executing hex coded instructions
