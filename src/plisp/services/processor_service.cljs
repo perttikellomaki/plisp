@@ -4,7 +4,7 @@
       [plisp.asm.lisp :as lisp]
       [plisp.cosmac.processor :as processor]))
 
-(def tick 1000)
+(def tick 10000)
 
 (defn- reset [db _]
   (-> db

@@ -1,4 +1,5 @@
-(ns plisp.cosmac.processor)
+(ns plisp.cosmac.processor
+  (:require [plisp.util :refer [reg16 int16]]))
 
 ;;;
 ;;; The processor state.
@@ -9,13 +10,6 @@
 ;;; output-buffer. Initial input can be given at reset, which is
 ;;; convenient for running tests.
 ;;;
-
-(defn- reg16 [x]
-  (let [int16 (bit-and 0xffff x)]
-    {:hi (quot int16 0x100) :lo (bit-and int16 0xff)}))
-
-(defn- int16 [reg]
-  (+ (* (:hi reg) 256) (:lo reg)))
 
 (def zeroed-registers
   "Register bank of sixteen 16-bit registers"

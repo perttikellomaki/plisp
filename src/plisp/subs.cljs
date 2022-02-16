@@ -1,6 +1,7 @@
 (ns plisp.subs
   (:require
-   [re-frame.core :as re-frame]))
+   [re-frame.core :as re-frame]
+   [plisp.util :as util]))
 
 (re-frame/reg-sub
  ::lisp-output
@@ -17,10 +18,15 @@
  (fn [db]
    (when-let [processor (get-in db [:processor])]
      (let [P         (:P processor)
-           PC        (get-in processor [:R P])]
+           PC        (util/int16 (get-in processor [:R P]))]
        (get-in processor [:mem PC])))))
 
 (re-frame/reg-sub
  ::lisp-input
  (fn [db]
    (get-in db [:processor :input-buffer])))
+
+(re-frame/reg-sub
+ ::processor
+ (fn [db]
+   (get-in db [:processor])))
