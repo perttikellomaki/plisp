@@ -30,7 +30,7 @@
 (defn- send-input-to-lisp [db [_ input]]
   (-> db
       (update-in [:processor :input-buffer]
-                 #(into % (str input "\r")))
+                 #(into (apply vector %) (str input "\r")))
       (update-in [:lisp-output] str (str input "\n"))))
 
 (defn- toggle-running [{:keys [db]}]

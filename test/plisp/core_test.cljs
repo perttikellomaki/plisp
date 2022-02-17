@@ -807,7 +807,7 @@
       (is (= {:D (.charCodeAt "0")
               :R {0 {:lo 0x01}}
               :input-buffer nil
-              :instruction-count 1
+              :instruction-count 2
               :status :read-blocked}
              changes))
       (is (empty? (:input-buffer changes))))))
