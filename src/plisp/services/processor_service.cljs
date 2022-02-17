@@ -4,7 +4,7 @@
       [plisp.asm.lisp :as lisp]
       [plisp.cosmac.processor :as processor]))
 
-(def tick 10000)
+(def default-tick 10000)
 
 (defn- reset [db _]
   (-> db
@@ -12,14 +12,14 @@
                 (processor/reset lisp/initial-lisp-memory 0x6000 []))
       (dissoc :lisp-output)))
 
-(defn- run-processor-tick [db & _]
+(defn- run-processor-tick [db [_ num-instructions]]
   (let [initial-state (:processor db)
         execution   (iterate processor/next-state initial-state)
         final-state (-> (take-while
                          (fn [processor]
                            (and (= (:status processor) :running)
                                 (<= (:instruction-count processor)
-                                    (+ (:instruction-count initial-state) tick))))
+                                    (+ (:instruction-count initial-state) num-instructions))))
                          execution)
                         last)]
     (-> db
@@ -41,7 +41,7 @@
       (assoc :clear-interval {:id ::processor-tick})
 
       (not running)
-      (assoc :dispatch-interval {:dispatch [::run-processor-tick]
+      (assoc :dispatch-interval {:dispatch [::run-processor-tick default-tick]
                                  :id ::processor-tick
                                  :ms 1000}))))
 

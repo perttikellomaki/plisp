@@ -2,6 +2,7 @@
   (:require
    [clojure.string :as string]
    [re-frame.core :as rf]
+   [reagent-mui.material.button :refer [button]]
    [plisp.asm.lisp :as lisp]
    [plisp.services.processor-service :as processor-service]
    [plisp.subs :as subs]))
@@ -31,6 +32,9 @@
         instruction-count @(rf/subscribe [::subs/instruction-count])
         current-instruction @(rf/subscribe [::subs/current-instruction])]
     [:div
+     [:div instruction-count " instructions executed"]
+     [button {:on-click #(rf/dispatch [::processor-service/run-processor-tick 1])} "Step"]
+     [:hr]
      [:table
       [:tbody
        [:tr
@@ -39,8 +43,8 @@
         [:td [:tt "X: " (hex-digit (:X processor))]]
         [:td [:tt "P: " (hex-digit (:P processor))]]]
        (map (partial register-row processor) (range 4))]]
-     
-     [:div instruction-count " instructions executed"]
+     [:hr]
+     [:div "Input buffer: " (apply str (:input-buffer processor))]
      [:hr]
      [:pre
       (when current-instruction
