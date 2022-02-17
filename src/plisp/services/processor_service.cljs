@@ -34,8 +34,8 @@
       (update-in [:lisp-output] str (str input "\n"))))
 
 (defn- toggle-running [{:keys [db]}]
-  (let [running (get-in db [:execution :status])]
-    (cond-> {:db (update-in db [:execution :status] #(not %))}
+  (let [running (get-in db [:execution :running])]
+    (cond-> {:db (update-in db [:execution :running] #(not %))}
 
       running
       (assoc :clear-interval {:id ::processor-tick})

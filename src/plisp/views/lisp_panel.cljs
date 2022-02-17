@@ -17,11 +17,12 @@
   (.. e -target -value))
 
 (defn lisp-panel []
-  (let [lisp-output @(rf/subscribe [::subs/lisp-output])]
+  (let [lisp-output @(rf/subscribe [::subs/lisp-output])
+        running @(rf/subscribe [::subs/execution-running])]
     [:div
      [form-group
       [form-control-label
-       {:control (reagent/as-element [switch {:default-checked false
+       {:control (reagent/as-element [switch {:checked running
                                               :on-change #(rf/dispatch [::processor-service/toggle-running])}])
         :label "Running"}]]
      [button {:on-click #(rf/dispatch [::processor-service/reset])} "Reset"]
