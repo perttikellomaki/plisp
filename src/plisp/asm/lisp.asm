@@ -113,12 +113,12 @@
         BYTE #07
         STRING "LAMBDA"
 7130:
-	BYTE #80
+        BYTE #80
         BYTE #3C
         BYTE #05
         STRING "SETQ"
 7137:
-	BYTE #80
+        BYTE #80
         BYTE #48
         BYTE #05
         STRING "DEFQ"
@@ -355,7 +355,7 @@
         SCAL 4 6442             ; PRINT (original calls 62ec but the is clearly a typo)
 
         BR B8
-	
+
 ;;; PROMPT
 
 60D1:
@@ -415,9 +415,9 @@
         SRET 4
 
 ;;; NEWNODE
-	
+
 6232:   
-	RSXD E                  ; SAVE REGS
+        RSXD E                  ; SAVE REGS
         RSXD F
 
         RLDI 6 #7026            ; KENNOJA JÄLJELLÄ?
@@ -549,7 +549,7 @@
         SEX 2
         INC 6
         SRET 4
-	
+
 ;;; KILLSPACES
 
 62D8:
@@ -605,7 +605,7 @@
         SRET 4
 631F:
         RLDI 6 #702C            ; HAE ERIKOISKOHTELUMERKKI AKKUUN
-	LDN 6
+        LDN 6
 
         RLDI 6 #7100            ; R6 = STRING STOR.
 6328:
@@ -634,7 +634,7 @@
 6340:
         GLO B                   ; TOO LONG ATOM NAME?
         XRI #FE
-	BZ 3A
+        BZ 3A
 
         LDN F                   ; RIVIN LOPPU?
         BZ 71
@@ -782,7 +782,7 @@
         INC F                   ; JOS ON, RET NIL
         LBR 6417
 
-	SMI #15                 ; > ?
+        SMI #15                 ; > ?
         BZ E4                   ; JOS ON, RET NIL
 
         SCAL 4 62F6             ; CALL READ
@@ -842,7 +842,7 @@
         BNZ 52
 
         SCAL 4 60D1
-	STRING "NIL"
+        STRING "NIL"
         BYTE #00
         SRET 4
 6452:
@@ -877,7 +877,7 @@
         XRI #FF                 ; KIRJASTO LOPPU?
         BNZ 7D
 
-	;; The error code is missing in the original, but #10
+        ;; The error code is missing in the original, but #10
         ;; is listed as "illegal atom".
         LDI #10                 ; JOS ON, ANNA ERR
         PHI 8
@@ -1273,7 +1273,7 @@
         SCAL 4 662F             ; EVALARG
         SCAL 4 6639             ; ATOMTEST
 
-	BZ B2                   ; LISTA -> HAE CDR (probably a typo, should be CAR)
+        BZ B2                   ; LISTA -> HAE CDR (probably a typo, should be CAR)
 
         GHI 6                   ; NIL -> RET NIL
         BNZ A0
@@ -1933,7 +1933,7 @@ E906:
         XRI #FE                 ; forced end of line if at end of buffer
         BNZ 0D
 
-	LDI #20                 ; turn the carriage return into a space
+        LDI #20                 ; turn the carriage return into a space
         STR F
         INC F
         LDI #00                 ; mark end of line with #00
