@@ -27,6 +27,24 @@
    (map (partial register-cell processor)
         [n (+ n 4) (+ n 8) (+ n 12)])])
 
+(defn- source-line [base-source-line i line]
+  (let [addr (get lisp/lisp-debug-info (+ base-source-line i))]
+    (str
+     (.toString addr 16)
+     (if (zero? i)
+       " =>"
+       "   ")
+   line)))
+
+(defn- source-panel [current-instruction]
+  [:pre
+   (when current-instruction
+     (->> lisp/lisp-source-text
+          (drop (:source-line-number current-instruction))
+          (take 5)
+          (map-indexed (partial source-line (:source-line-number current-instruction)))
+          (string/join "\n")))])
+
 (defn processor-panel []
   (let [processor @(rf/subscribe [::subs/processor])
         instruction-count @(rf/subscribe [::subs/instruction-count])
@@ -44,17 +62,7 @@
         [:td [:tt "P: " (hex-digit (:P processor))]]]
        (map (partial register-row processor) (range 4))]]
      [:hr]
-     [:div "Input buffer: " (apply str (:input-buffer processor))]
+     [:div "Input buffer: " (str (:input-buffer processor))]
      [:hr]
-     [:pre
-      (when current-instruction
-        (->> lisp/lisp-source-text
-             (drop (:source-line-number current-instruction))
-             (take 5)
-             (map-indexed (fn [i line]
-                            (str (if (zero? i)
-                                   "==>"
-                                   "   ")
-                                 line)))
-             (string/join "\n")))]
+     [source-panel current-instruction]
      [:hr]]))
