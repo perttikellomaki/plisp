@@ -99,7 +99,7 @@
     {:op :empty :bytes 0}))
 
 (defn- parse-instruction-line [line]
-     (or
+  (or
     (address-directive line)
     (byte-directive line)
     (string-directive line)
