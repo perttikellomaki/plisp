@@ -12,9 +12,7 @@
       (str/split #"\n")))
 
 (def lisp-source
-  (->> (map-indexed parser/parse-line lisp-source-text)
-      (filter #(not= (:op %) :empty))))
-
+  (map-indexed parser/parse-line lisp-source-text))
 
 ;;;
 ;;; An execution is a potentially infinite sequence of processor states.
@@ -24,7 +22,9 @@
   (iterate processor/next-state
            (processor/reset prog 0x6000 input)))
 
-(def initial-lisp-memory (memory/layout lisp-source))
+(def initial-lisp-memory (:memory (memory/layout lisp-source)))
+
+(def lisp-debug-info (:debug-info (memory/layout lisp-source)))
 
 ;;;
 ;;; Run Lisp.
