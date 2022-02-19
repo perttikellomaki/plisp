@@ -27,23 +27,29 @@
    (map (partial register-cell processor)
         [n (+ n 4) (+ n 8) (+ n 12)])])
 
-(defn- source-line [base-source-line i line]
-  (let [addr (get lisp/lisp-debug-info (+ base-source-line i))]
-    (str
-     (.toString addr 16)
-     (if (zero? i)
-       " =>"
-       "   ")
-   line)))
+(defn- format-source-line [pc [i addr line]]
+  (str
+   (.toString addr 16)
+   (if (= i 0)
+     " =>"
+     "   ")
+   line))
 
-(defn- source-panel [current-instruction]
-  [:pre
-   (when current-instruction
-     (->> lisp/lisp-source-text
-          (drop (:source-line-number current-instruction))
-          (take 5)
-          (map-indexed (partial source-line (:source-line-number current-instruction)))
-          (string/join "\n")))])
+(defn- source-panel [{:keys [source-line-number] :as current-instruction}]
+  (let [pc (get lisp/lisp-debug-info source-line-number)
+        relative-window (range -3 8)
+        window (map #(+ source-line-number %) relative-window)
+        ;; Each line is a vector [i address source-text]
+        source-lines (map vector
+                          relative-window
+                          (map #(get lisp/lisp-debug-info %)
+                               window)
+                          (map #(nth lisp/lisp-source-text %)
+                               window))]
+    [:pre
+     (when current-instruction
+       (->> (map (partial format-source-line pc) source-lines)
+            (string/join "\n")))]))
 
 (defn processor-panel []
   (let [processor @(rf/subscribe [::subs/processor])
