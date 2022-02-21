@@ -49,10 +49,11 @@
 
 (defn- source-panel [{:keys [source-line-number] :as current-instruction}]
   (let [relative-window (range -4 10)
-        window (map #(+ source-line-number %) relative-window)
+        window (->> (map #(+ source-line-number %) relative-window)
+                    (take-while #(< % (count lisp/lisp-source-text))))
         ;; Each line is a vector [i address source-text]
         source-lines (map vector
-                          relative-window
+                          (take (count window) relative-window)
                           (map #(get lisp/lisp-debug-info %)
                                window)
                           (map #(nth lisp/lisp-source-text %)
