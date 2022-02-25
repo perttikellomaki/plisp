@@ -6,3 +6,8 @@
 
 (defn int16 [reg]
   (+ (* (:hi reg) 256) (:lo reg)))
+
+
+(defn event-value
+  [e]
+  (.. e -target -value))

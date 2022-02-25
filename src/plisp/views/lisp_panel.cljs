@@ -8,13 +8,10 @@
    [reagent-mui.material.form-control-label :refer [form-control-label]]
    [reagent-mui.material.switch-component :refer [switch]]
    [plisp.services.processor-service :as processor-service]
-   [plisp.subs :as subs]))
+   [plisp.subs :as subs]
+   [plisp.util :refer [event-value]]))
 
 (defonce text-state (reagent/atom ""))
-
-(defn event-value
-  [e]
-  (.. e -target -value))
 
 (defn lisp-panel []
   (let [lisp-output @(rf/subscribe [::subs/lisp-output])
