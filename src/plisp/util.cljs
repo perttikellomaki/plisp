@@ -11,3 +11,6 @@
 (defn event-value
   [e]
   (.. e -target -value))
+
+(defn hex-string? [s]
+  (every? (set "0123456789aAbBcCdDeEfF") s))

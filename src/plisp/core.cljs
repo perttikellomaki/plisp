@@ -6,6 +6,7 @@
    [plisp.events :as events]
    [plisp.views :as views]
    [plisp.config :as config]
+   [plisp.services.processor-service :as processor-service]
    ))
 
 
@@ -21,5 +22,6 @@
 
 (defn init []
   (re-frame/dispatch-sync [::events/initialize-db])
+  (re-frame/dispatch [::processor-service/reset])
   (dev-setup)
   (mount-root))

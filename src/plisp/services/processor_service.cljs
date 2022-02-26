@@ -2,9 +2,19 @@
   (:require
       [re-frame.core :as re-frame]
       [plisp.asm.lisp :as lisp]
-      [plisp.cosmac.processor :as processor]))
+      [plisp.cosmac.processor :as processor]
+         [plisp.util :refer [int16] :as util]))
 
 (def default-tick 10000)
+
+(defn- running? [processor]
+  (= (:status processor) :running))
+
+(defn- pc [processor]
+  (-> processor
+      :R
+      (get (:P processor))
+      int16))
 
 (defn- reset [db _]
   (-> db
@@ -12,20 +22,38 @@
                 (processor/reset lisp/initial-lisp-memory 0x6000 []))
       (dissoc :lisp-output)))
 
-(defn- run-processor-tick [db [_ num-instructions]]
-  (let [initial-state (:processor db)
-        execution   (iterate processor/next-state initial-state)
-        final-state (-> (take-while
-                         (fn [processor]
-                           (and (= (:status processor) :running)
-                                (<= (:instruction-count processor)
-                                    (+ (:instruction-count initial-state) num-instructions))))
-                         execution)
-                        last)]
-    (-> db
-        (assoc-in [:processor]
-                  (assoc final-state :output-buffer []))
-        (update-in [:lisp-output] str (apply str (:output-buffer final-state))))))
+(defn- run-processor-tick [{:keys [db]} [_ num-instructions]]
+  (when (get-in db [:execution :running])
+    (let [initial-state (:processor db)
+          final-instruction-count (+ (:instruction-count initial-state) num-instructions)
+          execution   (iterate processor/next-state initial-state)
+          intermediate (-> (take-while
+                            (fn [processor]
+                              (and (running? processor)
+                                   (<= (:instruction-count processor)
+                                       final-instruction-count)
+                                   (not= (pc processor) (get-in db [:execution :breakpoint]))))
+                            execution)
+                           last)
+          final-state (if (and (running? intermediate)
+                               (< (:instruction-count intermediate) final-instruction-count))
+                        ;; presumably the intermediate state is one instruction short of breakpoint
+                        (processor/next-state intermediate)
+                        intermediate)
+          at-breakpoint? (= (pc final-state)
+                            (get-in db [:execution :breakpoint]))]
+      (cond->
+          {:db (-> db
+                   (assoc-in [:execution :running] (not at-breakpoint?))
+                   (assoc-in [:processor]
+                             (assoc final-state :output-buffer []))
+                   (update-in [:lisp-output] str (apply str (:output-buffer final-state))))}
+
+        at-breakpoint?
+        (assoc :clear-interval {:id ::processor-tick})))))
+
+(defn- set-breakpoint [db [_ address]]
+  (assoc-in db [:execution :breakpoint] address))
 
 (defn- send-input-to-lisp [db [_ input]]
   (-> db
@@ -49,9 +77,13 @@
  ::reset
  reset)
 
-(re-frame/reg-event-db
+(re-frame/reg-event-fx
  ::run-processor-tick
  run-processor-tick)
+
+(re-frame/reg-event-db
+ ::set-breakpoint
+ set-breakpoint)
 
 (re-frame/reg-event-db
  ::send-input-to-lisp
