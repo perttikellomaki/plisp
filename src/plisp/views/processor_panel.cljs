@@ -10,22 +10,7 @@
    [plisp.asm.lisp :as lisp]
    [plisp.services.processor-service :as processor-service]
    [plisp.subs :as subs]
-   [plisp.util :refer [event-value int16] :as util]))
-
-(defn hex-digit [n]
-  (.toString n 16))
-
-(defn- hex-string [value n]
-  (->> (.toString value 16)
-       (str "0000")
-       (take-last n)
-       (apply str)))
-
-(defn- hex-byte [byte]
-  (hex-string byte 2))
-
-(defn- hex-word [word]
-  (hex-string word 4))
+   [plisp.util :refer [event-value hex-digit hex-byte hex-word int16] :as util]))
 
 (defn- register-cell [processor n]
   ^{:key (str "register-cell-" n)}
@@ -52,12 +37,11 @@
     (map (partial register-row processor) (range 8))]])
 
 (defn- format-source-line [[i addr line]]
-  (str
-   (.toString addr 16)
-   (if (= i 0)
-     " =>"
-     "   ")
-   line))
+  ^{:key (str "source-" i)}
+  [:tr
+   [:td (str (.toString addr 16))]
+   [:td (when (= i 0) "=>")]
+   [:td line]])
 
 (defn- source-panel [{:keys [source-line-number] :as current-instruction}]
   (let [relative-window (range -4 10)
@@ -68,12 +52,12 @@
                           (take (count window) relative-window)
                           (map #(get lisp/lisp-debug-info %)
                                window)
-                          (map #(nth lisp/lisp-source-text %)
+                          (map #(nth lisp/lisp-source-html %)
                                window))]
-     [:pre
-      (when current-instruction
-        (->> (map format-source-line source-lines)
-             (string/join "\n")))]))
+    (when current-instruction
+      [:table
+       [:tbody
+        (map format-source-line source-lines)]])))
 
 (defn- address-window [offset-low address offset-high]
   (let [n (+ offset-low offset-high)]

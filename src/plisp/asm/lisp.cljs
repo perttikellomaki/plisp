@@ -5,11 +5,14 @@
    [plisp.asm.memory :as memory]
    [plisp.asm.parser :as parser]
    [plisp.cosmac.processor :as processor]
-))
+   [plisp.util :refer [str->html]]))
 
 (def lisp-source-text
   (-> (rc/inline "./lisp.asm")
       (str/split #"\n")))
+
+(def lisp-source-html
+  (map str->html lisp-source-text))
 
 (def lisp-source
   (map-indexed parser/parse-line lisp-source-text))

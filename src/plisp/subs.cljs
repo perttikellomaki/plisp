@@ -35,3 +35,8 @@
  ::execution-running
  (fn [db]
    (get-in db [:execution :running])))
+
+(re-frame/reg-sub
+ ::breakpoints
+ (fn [db]
+   #{(get-in db [:execution :breakpoint])}))

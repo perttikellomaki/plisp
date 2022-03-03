@@ -1,7 +1,8 @@
 (ns plisp.asm.parser
   (:require
    [cljs.reader :as reader]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [plisp.util :refer [str->html]]))
 
 ;;;
 ;;; Parsers for lines of assembly.
@@ -255,6 +256,6 @@
   (-> (parse-instruction-line line)
 
       ;; Attach debug info
-      (assoc :source-line line)
+      (assoc :source-line (str->html line))
       (assoc :source-line-number index)))
 

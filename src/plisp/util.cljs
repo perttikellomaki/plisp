@@ -1,4 +1,6 @@
-(ns plisp.util)
+(ns plisp.util
+  (:require [clojure.string :as str])
+  (:import goog.string))
 
 (defn reg16 [x]
   (let [int16 (bit-and 0xffff x)]
@@ -14,3 +16,22 @@
 
 (defn hex-string? [s]
   (every? (set "0123456789aAbBcCdDeEfF") s))
+
+(defn str->html [s]
+  (goog.string/unescapeEntities (apply str (map #(str/replace % " " "&nbsp;") s))))
+
+(defn hex-digit [n]
+  (.toString n 16))
+
+(defn- hex-string [value n]
+  (->> (.toString value 16)
+       (str "0000")
+       (take-last n)
+       (apply str)))
+
+(defn hex-byte [byte]
+  (hex-string byte 2))
+
+(defn hex-word [word]
+  (hex-string word 4))
+
