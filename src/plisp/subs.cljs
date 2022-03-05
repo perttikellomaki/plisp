@@ -39,4 +39,4 @@
 (re-frame/reg-sub
  ::breakpoints
  (fn [db]
-   #{(get-in db [:execution :breakpoint])}))
+   (get-in db [:execution :breakpoints])))

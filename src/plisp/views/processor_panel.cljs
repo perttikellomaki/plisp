@@ -144,28 +144,12 @@
       (->> (map (partial format-inspection-line processor) window)
           (string/join "\n"))]]))
 
-
-(def breakpoint (reagent/atom ""))
-
-(defn- address [s]
-  (when (and (= (count s) 4)
-             (util/hex-string? s))
-    (js/parseInt s 16)))
-
 (defn processor-panel []
   (let [processor @(rf/subscribe [::subs/processor])
         instruction-count @(rf/subscribe [::subs/instruction-count])
         current-instruction @(rf/subscribe [::subs/current-instruction])]
     [:div
      [button {:on-click #(rf/dispatch [::processor-service/run-processor-tick 1])} "Step"]
-     [button {:on-click #(rf/dispatch [::processor-service/set-breakpoint (js/parseInt @breakpoint 16)])
-              :disabled (not (address @breakpoint))}
-      "Set breakpoint"]
-     [text-field
-      {:value       @breakpoint
-       :on-change   (fn [e]
-                      (reset! breakpoint
-                              (event-value e)))}]
      [:hr]
      [stack {:direction :row}
       [:div [registers processor]]

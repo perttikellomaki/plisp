@@ -17,7 +17,7 @@
     ^{:key (str "source-" i)}
     [table-row {:hover true
                 :on-click
-                 #(rf/dispatch [::processor-service/set-breakpoint address])}
+                 #(rf/dispatch [::processor-service/toggle-breakpoint address])}
      [table-cell {:style {:border-bottom :none}}
       (hex-word address)]
      [table-cell {:style {:border-bottom :none}}

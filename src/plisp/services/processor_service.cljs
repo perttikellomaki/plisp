@@ -32,7 +32,7 @@
                        (and (running? processor)
                             (<= (:instruction-count processor)
                                 final-instruction-count)
-                            (not= (pc processor) (get-in db [:execution :breakpoint]))))
+                            (not ((get-in db [:execution :breakpoints]) (pc processor)))))
                      (iterate processor/next-state initial-state))
           final-state (cond
                         (empty? execution)
@@ -45,8 +45,7 @@
 
                         :else
                         (last execution))
-          at-breakpoint? (= (pc final-state)
-                            (get-in db [:execution :breakpoint]))]
+          at-breakpoint? ((get-in db [:execution :breakpoints]) (pc final-state))]
       (cond->
           {:db (-> db
                    (assoc-in [:execution :running] (not at-breakpoint?))
@@ -57,8 +56,12 @@
         at-breakpoint?
         (assoc :clear-interval {:id ::processor-tick})))))
 
-(defn- set-breakpoint [db [_ address]]
-  (assoc-in db [:execution :breakpoint] address))
+(defn- toggle-breakpoint [db [_ address]]
+  (update-in db [:execution :breakpoints]
+             (fn [breakpoints]
+               (if (breakpoints address)
+                 (disj breakpoints address)
+                 (conj breakpoints address)))))
 
 (defn- send-input-to-lisp [db [_ input]]
   (-> db
@@ -85,8 +88,8 @@
  run-processor-tick)
 
 (re-frame/reg-event-db
- ::set-breakpoint
- set-breakpoint)
+ ::toggle-breakpoint
+ toggle-breakpoint)
 
 (re-frame/reg-event-db
  ::send-input-to-lisp
