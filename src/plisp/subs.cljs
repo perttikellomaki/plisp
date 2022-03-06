@@ -32,6 +32,11 @@
    (get-in db [:processor])))
 
 (re-frame/reg-sub
+ ::processor-status
+ (fn [db]
+   (get-in db [:processor :status])))
+
+(re-frame/reg-sub
  ::execution-running
  (fn [db]
    (get-in db [:execution :running])))

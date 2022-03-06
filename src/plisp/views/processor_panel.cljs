@@ -44,7 +44,7 @@
    [:td line]])
 
 (defn- source-panel [{:keys [source-line-number] :as current-instruction}]
-  (let [relative-window (range -4 10)
+  (let [relative-window (range -3 8)
         window (->> (map #(+ source-line-number %) relative-window)
                     (take-while #(< % (count lisp/lisp-source-text))))
         ;; Each line is a vector [i address source-text]
@@ -146,7 +146,6 @@
 
 (defn processor-panel []
   (let [processor @(rf/subscribe [::subs/processor])
-        instruction-count @(rf/subscribe [::subs/instruction-count])
         current-instruction @(rf/subscribe [::subs/current-instruction])]
     [:div {:style {:flex "1"
                    :overflow "auto"
@@ -156,7 +155,6 @@
      [stack {:direction :row}
       [:div [registers processor]]
       [:div [source-panel current-instruction]]]
-     [:div (:status processor) ", " instruction-count " instructions executed"]
      [:hr]
      [:div "Input buffer: " (str (:input-buffer processor))]
      [:hr]
