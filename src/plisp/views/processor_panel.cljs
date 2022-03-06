@@ -148,7 +148,9 @@
   (let [processor @(rf/subscribe [::subs/processor])
         instruction-count @(rf/subscribe [::subs/instruction-count])
         current-instruction @(rf/subscribe [::subs/current-instruction])]
-    [:div
+    [:div {:style {:flex "1"
+                   :overflow "auto"
+                   :min-height 0}}
      [button {:on-click #(rf/dispatch [::processor-service/run-processor-tick 1])} "Step"]
      [:hr]
      [stack {:direction :row}

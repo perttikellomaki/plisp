@@ -12,7 +12,9 @@
 
 (defn lisp-panel []
   (let [lisp-output @(rf/subscribe [::subs/lisp-output])]
-    [:div
+    [:div {:style {:flex "1"
+                   :overflow "auto"
+                   :min-height 0}}
      [:pre lisp-output]
      [text-field
       {:value       @text-state

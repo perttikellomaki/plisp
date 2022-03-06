@@ -28,6 +28,9 @@
       (:source-line source)]]))
 
 (defn source-panel []
-  [table {:size :small}
-   [table-body
-    (doall (map-indexed source-line lisp/lisp-source))]])
+  [:div {:style {:flex "1 1 auto"
+                 :overflow "auto"
+                 :min-height 0}}
+   [table {:size :small}
+    [table-body
+     (doall (map-indexed source-line lisp/lisp-source))]]])
