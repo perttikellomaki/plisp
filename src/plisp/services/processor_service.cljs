@@ -10,6 +10,9 @@
 (defn- running? [processor]
   (= (:status processor) :running))
 
+(defn- read-blocked? [processor]
+  (= (:status processor) :read-blocked))
+
 (defn- pc [processor]
   (-> processor
       :R
@@ -29,7 +32,9 @@
           final-instruction-count (+ (:instruction-count initial-state) num-instructions)
           execution (take-while
                      (fn [processor]
-                       (and (running? processor)
+                       (and (or (running? processor)
+                                (and (read-blocked? processor)
+                                     (seq (:input-buffer processor))))
                             (<= (:instruction-count processor)
                                 final-instruction-count)
                             (not ((get-in db [:execution :breakpoints]) (pc processor)))))
