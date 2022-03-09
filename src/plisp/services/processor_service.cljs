@@ -80,9 +80,14 @@
                        :id ::processor-tick
                        :ms 1000}})
 
-(defn pause [{:keys [db]}]
+(defn- pause [{:keys [db]}]
   {:db (assoc-in db [:execution :running] false)
    :clear-interval {:id ::processor-tick}})
+
+(re-frame/reg-event-db
+ ::set-inspection-source
+ (fn [db [_ source]]
+   (assoc-in db [:processor-panel :inspection-source] source)))
 
 (re-frame/reg-event-db
  ::reset

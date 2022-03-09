@@ -59,24 +59,13 @@
        [:tbody
         (map format-source-line source-lines)]])))
 
-(defn- address-window [offset-low address offset-high]
-  (let [n (+ offset-low offset-high)]
-    (cond
-      (< (- address offset-low) 0)
-      (let [relative-window (range (- address) (+ address n))
-            window          (take n (range))]
-        (map vector relative-window window))
-
-      (> (+ address offset-high) 0xffff)
-      (let [relative-window (range (- 0x10000 address n) (- 0x10000 address))
-            window          (range (- 0x10000 offset-low offset-high)
-                                   0x10000)]
-        (map vector relative-window window))
-
-      :else
-      (let [relative-window (range (- offset-low) offset-high)
-            window          (range (- address offset-low) (+ address offset-high))]
-        (map vector relative-window window)))))
+(defn- address-window [{:keys [address step rows-before rows-after]}]
+  (let [zero-line (- address (mod address step))
+        first-address (- zero-line (* step (inc rows-before)))
+        last-address (+ zero-line (* step rows-after))
+        lines (partition step step (range first-address last-address))]
+    (map (fn [line] (map #(bit-and 0xffff %) line))
+         lines)))
 
 (defn register-path [selection]
   (case selection
@@ -97,32 +86,49 @@
     "Re" [:R 0xe]
     "Rf" [:R 0xf]))
 
-(defn- format-inspection-line [processor [i address]]
-  (str (if (zero? i) "==> " "    ")
-       (hex-word address)
-       " "
-       (let [{:keys [op value] :as memory-value} (get (:mem processor) address)]
-         (cond
-           (= op :byte)        (str (hex-byte value)
-                                    " "
-                                    (str (char value)))
-           (nil? memory-value) "00"
-           :else               "??"))))
+(defn- memory-as-byte [processor address]
+  (let [{:keys [op value] :as memory-value} (get (:mem processor) address)]
+    (cond
+      (= op :byte) (hex-byte value)
+      (nil? memory-value) "00"
+      :else               "??")))
 
-(def select-state (reagent/atom "R0"))
+(defn- memory-as-char [processor address]
+  (let [{:keys [op value]} (get (:mem processor) address)]
+    (if (= op :byte) (char value)
+        " ")))
+
+(defn- format-inspection-line [processor address addresses]
+  ^{:key (str "tr-" (first addresses))}
+  [:tr
+   [:td (when ((set addresses) address) "==>")]
+   [:td (hex-word (first addresses))]
+   (map (fn [addr]
+          (let [prefix (if (= addr address) :b :span)]
+            ^{:key (str "td-" addr)}
+            [:td [prefix (memory-as-byte processor addr)]]))
+        addresses)
+   [:td (apply str
+               (map (fn [addr]
+                      (memory-as-char processor addr))
+                    addresses))]])
 
 (defn- inspection-panel [processor]
-  (let [address (-> (get-in processor (register-path @select-state))
+  (let [inspection-source @(rf/subscribe [::subs/inspection-source])
+        address (-> (get-in processor (register-path inspection-source))
                     int16)
-        window (address-window 3 address 8)]
+        window (address-window {:address address
+                                :step    4
+                                :rows-before 3
+                                :rows-after 8})]
     [:div
      [:div
      [text-field
-      {:value       @select-state
+      {:value       inspection-source
        :label       "Select"
        :placeholder "Placeholder"
        :on-change   (fn [e]
-                      (reset! select-state (event-value e)))
+                      (rf/dispatch [::processor-service/set-inspection-source (event-value e)]))
        :select      true}
       [menu-item {:value "R0"} "R0"]
       [menu-item {:value "R1"} "R1"]
@@ -140,9 +146,9 @@
       [menu-item {:value "Rd"} "Rd"]
       [menu-item {:value "Re"} "Re"]
       [menu-item {:value "Rf"} "Rf"]]]
-     [:pre
-      (->> (map (partial format-inspection-line processor) window)
-          (string/join "\n"))]]))
+     [:table
+      [:tbody
+       (map #(format-inspection-line processor address %) window)]]]))
 
 (defn processor-panel []
   (let [processor @(rf/subscribe [::subs/processor])
@@ -150,7 +156,6 @@
     [:div {:style {:flex "1"
                    :overflow "auto"
                    :min-height 0}}
-     [button {:on-click #(rf/dispatch [::processor-service/run-processor-tick 1])} "Step"]
      [:hr]
      [stack {:direction :row}
       [:div [registers processor]]
