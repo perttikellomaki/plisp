@@ -10,7 +10,8 @@
    [plisp.asm.lisp :as lisp]
    [plisp.services.processor-service :as processor-service]
    [plisp.subs :as subs]
-   [plisp.util :refer [event-value hex-digit hex-byte hex-word int16] :as util]))
+   [plisp.util :refer [event-value hex-digit hex-byte hex-word int16] :as util]
+   [plisp.views.box-and-pointer :as box-and-pointer]))
 
 (defn- register-cell [processor n]
   ^{:key (str "register-cell-" n)}
@@ -163,4 +164,5 @@
      [:hr]
      [:div "Input buffer: " (str (:input-buffer processor))]
      [:hr]
+     [box-and-pointer/box-and-pointer-panel processor]
      [inspection-panel processor]]))

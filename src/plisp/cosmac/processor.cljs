@@ -1,6 +1,17 @@
 (ns plisp.cosmac.processor
   (:require [plisp.util :refer [reg16 int16]]))
 
+(defn- byte-in-memory [address memory]
+  (let [{:keys [op value] :as memory-contents} (get memory address)]
+    (cond (nil? memory-contents) 0x00
+          (= op :byte)           value
+          :else                  nil)))
+
+(defn word-in-memory [address memory]
+  (when-let [hi-byte (byte-in-memory address memory)]
+    (when-let [low-byte (byte-in-memory (inc address) memory)]
+      (+ (* 0x100 hi-byte) low-byte))))
+
 ;;;
 ;;; The processor state.
 ;;;
