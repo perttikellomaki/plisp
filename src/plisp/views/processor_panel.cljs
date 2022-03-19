@@ -10,7 +10,7 @@
    [plisp.asm.lisp :as lisp]
    [plisp.services.processor-service :as processor-service]
    [plisp.subs :as subs]
-   [plisp.util :refer [event-value hex-digit hex-byte hex-word int16] :as util]
+   [plisp.util :refer [event-value hex-digit hex-byte hex-word int16 register-path] :as util]
    [plisp.views.box-and-pointer :as box-and-pointer]))
 
 (defn- register-cell [processor n]
@@ -67,25 +67,6 @@
         lines (partition step step (range first-address last-address))]
     (map (fn [line] (map #(bit-and 0xffff %) line))
          lines)))
-
-(defn register-path [selection]
-  (case selection
-    "R0" [:R 0x0]
-    "R1" [:R 0x1]
-    "R2" [:R 0x2]
-    "R3" [:R 0x3]
-    "R4" [:R 0x4]
-    "R5" [:R 0x5]
-    "R6" [:R 0x6]
-    "R7" [:R 0x7]
-    "R8" [:R 0x8]
-    "R9" [:R 0x9]
-    "Ra" [:R 0xa]
-    "Rb" [:R 0xb]
-    "Rc" [:R 0xc]
-    "Rd" [:R 0xd]
-    "Re" [:R 0xe]
-    "Rf" [:R 0xf]))
 
 (defn- memory-as-byte [processor address]
   (let [{:keys [op value] :as memory-value} (get (:mem processor) address)]
@@ -164,5 +145,9 @@
      [:hr]
      [:div "Input buffer: " (str (:input-buffer processor))]
      [:hr]
-     [box-and-pointer/box-and-pointer-panel processor]
-     [inspection-panel processor]]))
+     [:div {:style {:display "flex"
+                   :flex-flow "row"
+                   :overflow "hidden"
+                   :height "100%"}}
+      [inspection-panel processor]
+      [box-and-pointer/box-and-pointer-panel processor]]]))

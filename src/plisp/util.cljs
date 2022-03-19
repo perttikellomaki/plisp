@@ -35,3 +35,21 @@
 (defn hex-word [word]
   (hex-string word 4))
 
+(defn register-path [selection]
+  (case selection
+    "R0" [:R 0x0]
+    "R1" [:R 0x1]
+    "R2" [:R 0x2]
+    "R3" [:R 0x3]
+    "R4" [:R 0x4]
+    "R5" [:R 0x5]
+    "R6" [:R 0x6]
+    "R7" [:R 0x7]
+    "R8" [:R 0x8]
+    "R9" [:R 0x9]
+    "Ra" [:R 0xa]
+    "Rb" [:R 0xb]
+    "Rc" [:R 0xc]
+    "Rd" [:R 0xd]
+    "Re" [:R 0xe]
+    "Rf" [:R 0xf]))
