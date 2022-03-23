@@ -86,8 +86,10 @@
 
 (re-frame/reg-event-db
  ::set-inspection-source
- (fn [db [_ source]]
-   (assoc-in db [:processor-panel :inspection-source] source)))
+ (fn [db [_ id source address]]
+   (update-in db
+              [:processor-panel :inspection-sources]
+              #(assoc % id {:source source :address address}))))
 
 (re-frame/reg-event-db
  ::reset

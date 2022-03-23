@@ -1,21 +1,21 @@
 (ns plisp.views.box-and-pointer
   (:require
    [re-frame.core :as rf]
-   [reagent-mui.material.menu-item :refer [menu-item]]
-   [reagent-mui.material.text-field :refer [text-field]]
    [plisp.cosmac.processor :as processor]
-   [plisp.services.processor-service :as processor-service]
    [plisp.subs :as subs]
-   [plisp.util :refer [event-value int16 register-path] :as util]))
+   [plisp.util :as util]
+   [plisp.views.inspection-source-selector :refer [inspection-source-selector]]))
 
 (def x-scale 40)
 (def y-scale 20)
 
-(defn- layout-boxes [{:keys [x y address parent-x parent-y]} memory]
+(defn- layout-boxes [{:keys [x y address parent-x parent-y]} existing-boxes memory]
+  (js/console.log "##" (str (util/hex-word address)) (str (map #(util/hex-word (:address %)) existing-boxes)) (str existing-boxes))
   (cond
 
     (or (= address 0x0000)
-        (= address 0x0004))
+        (= address 0x0004)
+        #_(some #(= (:address %) address) existing-boxes))
     {:width 0
      :pointers []
      :boxes []}
@@ -72,36 +72,16 @@
 
   
 (defn box-and-pointer-panel [processor]
-  (let [inspection-source @(rf/subscribe [::subs/inspection-source])
-        address (-> (get-in processor (register-path inspection-source))
-                    int16)
+  (let [id ::box-and-pointer-inspector
+        inspection-sources @(rf/subscribe [::subs/inspection-sources])
+        address (-> inspection-sources
+                    (get id)
+                    :address)
         boxes (layout-boxes {:x 0 :y 0 :address address}
+                            []
                             (:mem processor))]
     [:div
-     [:div
-      [text-field
-       {:value       inspection-source
-        :label       "Select"
-        :placeholder "Placeholder"
-        :on-change   (fn [e]
-                       (rf/dispatch [::processor-service/set-inspection-source (event-value e)]))
-        :select      true}
-       [menu-item {:value "R0"} "R0"]
-       [menu-item {:value "R1"} "R1"]
-       [menu-item {:value "R2"} "R2"]
-       [menu-item {:value "R3"} "R3"]
-       [menu-item {:value "R4"} "R4"]
-       [menu-item {:value "R5"} "R5"]
-       [menu-item {:value "R6"} "R6"]
-       [menu-item {:value "R7"} "R7"]
-       [menu-item {:value "R8"} "R8"]
-       [menu-item {:value "R9"} "R9"]
-       [menu-item {:value "Ra"} "Ra"]
-       [menu-item {:value "Rb"} "Rb"]
-       [menu-item {:value "Rc"} "Rc"]
-       [menu-item {:value "Rd"} "Rd"]
-       [menu-item {:value "Re"} "Re"]
-       [menu-item {:value "Rf"} "Rf"]]]
+     [inspection-source-selector processor id]
      [:svg {:width "500" :height "300"}
       (doall (map (fn [{:keys [from-x from-y to-x to-y]}]
                     ^{:key (str "line-" from-x "-" from-y "-"

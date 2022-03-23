@@ -47,6 +47,6 @@
    (get-in db [:execution :breakpoints])))
 
 (re-frame/reg-sub
- ::inspection-source
+ ::inspection-sources
  (fn [db]
-   (get-in db [:processor-panel :inspection-source])))
+   (get-in db [:processor-panel :inspection-sources])))

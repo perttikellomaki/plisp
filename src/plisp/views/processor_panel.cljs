@@ -1,16 +1,11 @@
 (ns plisp.views.processor-panel
   (:require
-   [clojure.string :as string]
-   [reagent.core :as reagent]
    [re-frame.core :as rf]
-   [reagent-mui.material.button :refer [button]]
-   [reagent-mui.material.menu-item :refer [menu-item]]
    [reagent-mui.material.stack :refer [stack]]
-   [reagent-mui.material.text-field :refer [text-field]]
    [plisp.asm.lisp :as lisp]
-   [plisp.services.processor-service :as processor-service]
    [plisp.subs :as subs]
-   [plisp.util :refer [event-value hex-digit hex-byte hex-word int16 register-path] :as util]
+   [plisp.util :refer [hex-digit hex-byte hex-word] :as util]
+   [plisp.views.inspection-source-selector :refer [inspection-source-selector]]
    [plisp.views.box-and-pointer :as box-and-pointer]))
 
 (defn- register-cell [processor n]
@@ -95,39 +90,19 @@
                       (memory-as-char processor addr))
                     addresses))]])
 
+
 (defn- inspection-panel [processor]
-  (let [inspection-source @(rf/subscribe [::subs/inspection-source])
-        address (-> (get-in processor (register-path inspection-source))
-                    int16)
+  (let [id  ::memory-inspector
+        inspection-sources @(rf/subscribe [::subs/inspection-sources])
+        address (-> inspection-sources
+                    (get id)
+                    :address)
         window (address-window {:address address
                                 :step    4
                                 :rows-before 3
                                 :rows-after 8})]
     [:div
-     [:div
-     [text-field
-      {:value       inspection-source
-       :label       "Select"
-       :placeholder "Placeholder"
-       :on-change   (fn [e]
-                      (rf/dispatch [::processor-service/set-inspection-source (event-value e)]))
-       :select      true}
-      [menu-item {:value "R0"} "R0"]
-      [menu-item {:value "R1"} "R1"]
-      [menu-item {:value "R2"} "R2"]
-      [menu-item {:value "R3"} "R3"]
-      [menu-item {:value "R4"} "R4"]
-      [menu-item {:value "R5"} "R5"]
-      [menu-item {:value "R6"} "R6"]
-      [menu-item {:value "R7"} "R7"]
-      [menu-item {:value "R8"} "R8"]
-      [menu-item {:value "R9"} "R9"]
-      [menu-item {:value "Ra"} "Ra"]
-      [menu-item {:value "Rb"} "Rb"]
-      [menu-item {:value "Rc"} "Rc"]
-      [menu-item {:value "Rd"} "Rd"]
-      [menu-item {:value "Re"} "Re"]
-      [menu-item {:value "Rf"} "Rf"]]]
+     [inspection-source-selector processor id]
      [:table
       [:tbody
        (map #(format-inspection-line processor address %) window)]]]))
