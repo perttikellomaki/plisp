@@ -64,6 +64,15 @@
     :else {:width 0
            :boxes []}))
 
+(def ml-addresses
+  {"67fa" "<cons>"
+   "664f" "<quote>"
+   "6690" "<car>"
+   "66a6" "<cdr>"
+   "69f3" "<lambda>"
+   "6746" "<setq>"
+   "6769" "<defq>"})
+
 (defn- word-from-memory [memory address]
   (+ (* (-> (get memory address) :value) 0x100)
      (-> (get memory (inc address)) :value)))
@@ -113,7 +122,9 @@
 
      ^{:key (str "atom-name-" x "-" y "-address")}
      [:text {:x (+ text-x box-width) :y (- text-y 18) :fill "blue"}
-      (or (get atom-names address) "")]
+      (or (get atom-names address)
+          (get ml-addresses cdr-value)
+          "")]
      )))
 
 (defn- draw-pointers [graph]
