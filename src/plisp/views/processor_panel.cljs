@@ -93,11 +93,8 @@
 
 (defn- inspection-panel [processor]
   (let [id  ::memory-inspector
-        inspection-sources @(rf/subscribe [::subs/inspection-sources])
-        address (-> inspection-sources
-                    (get id)
-                    :address)
-        window (address-window {:address address
+        inspection-address @(rf/subscribe [::subs/inspection-address id])
+        window (address-window {:address inspection-address
                                 :step    4
                                 :rows-before 3
                                 :rows-after 8})]
@@ -105,7 +102,7 @@
      [inspection-source-selector processor id]
      [:table
       [:tbody
-       (map #(format-inspection-line processor address %) window)]]]))
+       (map #(format-inspection-line processor inspection-address %) window)]]]))
 
 (defn processor-panel []
   (let [processor @(rf/subscribe [::subs/processor])

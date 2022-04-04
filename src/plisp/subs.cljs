@@ -50,3 +50,13 @@
  ::inspection-sources
  (fn [db]
    (get-in db [:processor-panel :inspection-sources])))
+
+(re-frame/reg-sub
+ ::inspection-address
+ :<- [::processor]
+ :<- [::inspection-sources]
+ (fn [[processor inspection-sources] [_ id]]
+   (let [source (get-in inspection-sources [id :source])]
+     (if (= source "address")
+       (get-in inspection-sources [id :address])
+       (util/int16 (get-in processor (util/register-path source)))))))

@@ -166,14 +166,12 @@
   
 (defn box-and-pointer-panel [processor]
   (let [id                 ::box-and-pointer-inspector
-        inspection-sources @(rf/subscribe [::subs/inspection-sources])
-        address            (-> inspection-sources
-                               (get id)
-                               :address)
+        inspection-address (bit-and @(rf/subscribe [::subs/inspection-address id])
+                                    2r1111111111111100)
         atoms              (atoms (:mem processor) 0x7102)
         atom-names         (zipmap (map #(util/hex-word (:address %)) atoms)
                                    (map :name atoms))
-        graph              (layout-graph {:x 0 :y 0 :address address}
+        graph              (layout-graph {:x 0 :y 0 :address inspection-address}
                                          []
                                          (:mem processor))]
     [:div
