@@ -40,7 +40,7 @@
         :disabled (not running)}
        [pause-circle]]
       [icon-button
-       {:on-click #(rf/dispatch [::processor-service/run-processor-tick 1])}
+       {:on-click #(rf/dispatch [::processor-service/run-single-instruction])}
        [airline-stops]]
       [icon-button
        {:on-click #(rf/dispatch  [::processor-service/reset])}

@@ -25,6 +25,15 @@
                 (processor/reset lisp/initial-lisp-memory 0x6000 []))
       (dissoc :lisp-output)))
 
+(defn- run-single-instruction [db]
+  (let [next (processor/next-state (:processor db))]
+    (if (get-in db [:execution :running])
+      db
+      (-> db
+          (assoc :processor
+                 (assoc next :output-buffer []))
+          (update :lisp-output str (apply str (:output-buffer next)))))))
+
 (defn- run-processor-tick [{:keys [db]} [_ num-instructions]]
   (when (or (get-in db [:execution :running])
             (= num-instructions 1))
@@ -94,6 +103,10 @@
 (re-frame/reg-event-db
  ::reset
  reset)
+
+(re-frame/reg-event-db
+ ::run-single-instruction
+ run-single-instruction)
 
 (re-frame/reg-event-fx
  ::run-processor-tick
