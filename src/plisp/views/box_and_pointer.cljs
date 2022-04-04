@@ -22,10 +22,17 @@
   (cond
 
     (or (= address 0x0000)
-        (= address 0x0004)
-        (some #(= (:address %) address) existing-boxes))
+        (= address 0x0004))
     {:width 0
      :pointers []
+     :boxes []}
+
+    (some #(= (:address %) address) existing-boxes)
+    {:width 0
+     :pointers [{:from-car parent-car
+                 :from-cdr parent-cdr
+                 :to address
+                 :kind :back-edge}]
      :boxes []}
 
     (>= address 0x8000)
@@ -50,7 +57,8 @@
        :pointers (into (if (or parent-car parent-cdr)
                          [{:from-car parent-car
                            :from-cdr parent-cdr
-                           :to address}]
+                           :to address
+                           :kind :forward-edge}]
                          [])
                        (concat (:pointers car-graph) (:pointers cdr-graph)))
        :boxes (into [{:x x
@@ -101,11 +109,8 @@
             {:address address
              :name name}))))
 
-(defn- svg-cons [x y car-value cdr-value address memory]
-  (let [atoms (atoms memory 0x7102)
-        atom-names  (zipmap (map #(util/hex-word (:address %)) atoms)
-                            (map :name atoms))
-        text-x (+ x 3)
+(defn- svg-cons [x y car-value cdr-value address atom-names]
+  (let [text-x (+ x 3)
         text-y (+ y 16)]
     (list
      ^{:key (str "cons-" x "-" y "-car")}
@@ -127,45 +132,61 @@
           "")]
      )))
 
-(defn- draw-pointers [graph]
+(defn- draw-pointers [graph atom-names]
   (let [boxes (zipmap (map :address (:boxes graph)) (:boxes graph))]
     (doall
      (->>
       (:pointers graph)
       (map
-       (fn [{:keys [from-car from-cdr to]}]
-         ^{:key (str "from-" from-car from-cdr "-to-" to)}
-         [:line {:x1 (if from-car
-                       (-> (get boxes from-car) :x x-scale pointer-x-offset)
-                       (-> (get boxes from-cdr) :x (+ 1) x-scale pointer-x-offset))
-                 :y1 (if from-car
-                       (-> (get boxes from-car) :y y-scale pointer-y-offset)
-                       (-> (get boxes from-cdr) :y y-scale pointer-y-offset))
-                 :x2 (-> (get boxes to) :x x-scale pointer-x-offset)
-                 :y2 (-> (get boxes to) :y y-scale pointer-y-offset)
-                 :stroke "blue"
-                 :stroke-width 1}]))))))
+       (fn [{:keys [kind from-car from-cdr to]}]
+         (let [forward-edge? (= kind :forward-edge)
+               x1 (if from-car
+                    (-> (get boxes from-car) :x x-scale pointer-x-offset)
+                    (-> (get boxes from-cdr) :x (+ 1) x-scale pointer-x-offset))
+               y1 (if from-car
+                    (-> (get boxes from-car) :y y-scale pointer-y-offset)
+                    (-> (get boxes from-cdr) :y y-scale pointer-y-offset))]
+           ^{:key (str "from-" from-car from-cdr "-to-" to)}
+           [[:line {:x1 x1
+                   :y1 y1
+                   :x2 (if forward-edge?
+                         (-> (get boxes to) :x x-scale pointer-x-offset)
+                         x1)
+                   :y2 (if forward-edge?
+                         (-> (get boxes to) :y y-scale pointer-y-offset)
+                         (+ y1 (* box-height 2)))
+                   :stroke (if (= kind :forward-edge) "blue" "green")
+                    :stroke-width 1}]
+            [:text {:x (- x1 (/ box-width 2)) :y (+ y1 (* box-height 2)) :fill "red"}
+             (if forward-edge? ""
+                 (if-let [name (get atom-names (util/hex-word to))]
+                   name
+                   (util/hex-word to)))]])))
+      (apply concat)))))
   
 (defn box-and-pointer-panel [processor]
-  (let [id ::box-and-pointer-inspector
+  (let [id                 ::box-and-pointer-inspector
         inspection-sources @(rf/subscribe [::subs/inspection-sources])
-        address (-> inspection-sources
-                    (get id)
-                    :address)
-        graph (layout-graph {:x 0 :y 0 :address address}
-                            []
-                            (:mem processor))]
+        address            (-> inspection-sources
+                               (get id)
+                               :address)
+        atoms              (atoms (:mem processor) 0x7102)
+        atom-names         (zipmap (map #(util/hex-word (:address %)) atoms)
+                                   (map :name atoms))
+        graph              (layout-graph {:x 0 :y 0 :address address}
+                                         []
+                                         (:mem processor))]
     [:div
      [inspection-source-selector processor id]
 
      [:svg {:width "1000" :height "300"}
-      (draw-pointers graph)
+      (draw-pointers graph atom-names)
       (doall (map (fn [{:keys [x y car cdr address] :as _box}]
                     (svg-cons (x-scale x) (y-scale y)
                               (util/hex-word car)
                               (util/hex-word cdr)
                               (util/hex-word address)
-                              (:mem processor)))
+                              atom-names))
                   (:boxes graph)))]]))
 
 
