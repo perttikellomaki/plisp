@@ -69,6 +69,26 @@
 702C:
         BYTE #2F                ; READ SPECIAL CHR
 
+;;; Number work area
+702D:
+        BYTE #00
+        BYTE #00
+        BYTE #00
+        BYTE #00
+        BYTE #00
+
+7040:
+        BYTE #10                ; 10000
+        BYTE #27
+        BYTE #E8                ; 1000
+        BYTE #03
+        BYTE #64                ; 100
+        BYTE #00
+        BYTE #0A                ; 10
+        BYTE #00
+        BYTE #01                ; 1
+        BYTE #00
+
 ;;; ATOM BUFF
 ;;; There is no surviving documentation, so this is a modern
 ;;; reconstruction.
@@ -340,7 +360,7 @@
         BYTE #0A
         BYTE #00
 
-60b8:
+60B8:
         LDI #00                 ; TULKKAUSSILMUKKA
         PHI 8                   ; NO ERR
         SCAL 4 60D1
@@ -352,7 +372,7 @@
 
         SCAL 4 6511             ; EVAL
 
-        SCAL 4 6442             ; PRINT (original calls 62ec but the is clearly a typo)
+        SCAL 4 6442             ; PRINT (original calls 62ec but that is clearly a typo)
 
         BR B8
 
@@ -680,10 +700,7 @@
         DEC 2
         
 
-        NOP                     ; TODO: call numconv
-        NOP
-        NOP
-        NOP
+        SCAL 4 E930             ; CALL NUMCONV
 
         RLDI A #7102            ; RA = STRING START
         SEX A
@@ -1938,4 +1955,161 @@ E906:
         INC F
         LDI #00                 ; mark end of line with #00
         STR F
+        SRET 4
+
+;;; String to integer conversion.
+;;; This approximates what would have been in the original.
+
+E930:
+        RSXD B
+        RSXD C
+        RSXD D
+        RSXD E
+        RSXD F
+
+        LDN E
+        XRI #2D                 ; minus?
+        PLO F                   ; RF.0 is zero if leading minus
+        LSNZ
+
+        INC E                   ; skip minus sign
+        DEC B                   ; decrement length
+
+        GLO B
+        PHI B                   ; save length
+
+E943:
+        GLO B                   ; all characters checked?
+        BZ 5E
+
+        LDA E
+        SMI #30
+        BNF 50                  ; stop if below '0'
+        SMI #0A
+        BDF 50                  ; stop if above '9'
+        DEC B
+        BR 43
+
+;;; Not a number, return to READ
+
+E950:
+        INC 2
+        RLXA F
+        RLXA E
+        RLXA D
+        RLXA C
+        RLXA B
+        DEC 2
+        SRET 4
+
+;;; Copy number to work area
+E95E:
+        GHI B
+        PLO B
+        BZ 50                   ; if there are no digits, this is not a number
+        SMI #06
+        BDF CF                  ; exit if too many digits
+
+        RLDI C #7031            ; points to end of work area
+        SEX C
+        LDI #00                 ; clear work area
+        STXD
+        STXD
+        STXD
+        STXD
+        STXD
+        LDI #31
+        PLO C                   ; points to end of work area again
+
+        DEC E                   ; points to end of digits
+
+E976
+        LDN E                   ; copy one digit
+        DEC E
+        SMI #30
+        STXD
+        DEC B
+        GLO B
+        BNZ 76
+
+E97F:
+        RLDI C #702D            ; start of number work area
+        RLDI E #7040            ; initially points to 10000
+        SEX E
+        RLDI B #0000            ; starting value
+
+E98C:
+        LDA C                   ; load a digit
+        PLO D
+
+E98E:
+        GLO D
+        BZ 9B
+
+        GLO B                   ; add 16 bit constant corresponding to digit position
+        ADD
+        PLO B
+        INC E
+        GHI B
+        ADC
+        PHI B
+
+        DEC E
+        DEC D
+        BR 8E
+
+E99B:
+        GLO C                   ; all digits converted?
+        XRI #32
+        BZ A4
+
+        INC E                   ; next digit position
+        INC E
+        BR 8C
+
+E9A4:
+        GLO F                   ; was there a leading minus?
+        BNZ B0
+
+        GLO B                   ; if there was, complement RB
+        XRI #FF
+        PLO B
+        GHI B
+        XRI #FF
+        PHI B
+        INC B
+E9B0:
+        SEX 2
+        SCAL 4 6232             ; allocate new cell, address of last byte in R6
+
+        SEX 6
+        RSXD B                  ; store number
+        LDI #08                 ; number tag
+        STXD
+        LDI #00
+        STR 6
+
+        SEX 2
+        INC 2
+        RLXA F
+        RLXA E
+        RLXA D
+        RLXA C
+        RLXA B
+
+        RLXA 4                  ; return to caller's caller
+        DEC 2
+        SRET 4
+
+E9CF:
+        RLXA F
+        RLXA E
+        RLXA D
+        RLXA C
+        RLXA B
+        LDI #10                 ; error 16: integer out of bounds
+        PHI B
+        RLDI 6 #0000            ; return value is nil
+        RLXA 4                  ; return to caller's caller
+        DEC 2
         SRET 4
