@@ -614,6 +614,71 @@
             :mem {0x0100 {:op :byte, :value 0xff}}}
            changes))))
 
+(deftest test-adc
+  (let [changes
+        (run-prog
+         ["  RLDI 1 #0100"
+          "  RLDI 2 #0102"
+          "  RLDI 3 #0104"
+          "  SEX 2"
+          "  LDA 1"
+          "  ADD"
+          "  STR 3"
+          "  INC 3"
+          "  INC 2"
+          "  LDA 1"
+          "  ADC"
+          "  STR 3"
+          "0100:"
+          "  BYTE #10"
+          "  BYTE #20"
+          "  BYTE #30"
+          "  BYTE #40"]
+         {:n 12})]
+    (is (= {:D 0x60
+            :X 2
+            :R {0 {:lo 0x15}
+                1 {:hi 0x01 :lo 0x02}
+                2 {:hi 0x01 :lo 0x03}
+                3 {:hi 0x01 :lo 0x05}
+                }
+            :instruction-count 12
+            :mem {0x0104 {:op :byte, :value 0x40}
+                  0x0105 {:op :byte, :value 0x60}}}
+           changes)))
+  (let [changes
+        (run-prog
+         ["  RLDI 1 #0100"
+          "  RLDI 2 #0102"
+          "  RLDI 3 #0104"
+          "  SEX 2"
+          "  LDA 1"
+          "  ADD"
+          "  STR 3"
+          "  INC 3"
+          "  INC 2"
+          "  LDA 1"
+          "  ADC"
+          "  STR 3"
+          "0100:"
+          "  BYTE #91"
+          "  BYTE #20"
+          "  BYTE #82"
+          "  BYTE #40"]
+         {:n 12})]
+    (is (= {:D 0x61
+            :X 2
+            :R {0 {:lo 0x15}
+                1 {:hi 0x01 :lo 0x02}
+                2 {:hi 0x01 :lo 0x03}
+                3 {:hi 0x01 :lo 0x05}
+                }
+            :instruction-count 12
+            :mem {0x0104 {:op :byte, :value 0x13}
+                  0x0105 {:op :byte, :value 0x61}}}
+           changes)))
+  )
+
 (deftest test-sd
   (let [changes
         (run-prog

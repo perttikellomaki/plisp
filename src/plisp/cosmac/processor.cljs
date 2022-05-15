@@ -136,6 +136,7 @@
       :DEC  [[:R n]                         #(dec16 (R n))]
       :BR   [[:R (P) :lo]                   #(short-branch page-address true (R (P)))]
       :BZ   [[:R (P) :lo]                   #(short-branch page-address (= (D) 0) (R (P)))]
+      :BNF  [[:R (P) :lo]                   #(short-branch page-address (= (DF) 0) (R (P)))]
       :BDF  [[:R (P) :lo]                   #(short-branch page-address (= (DF) 1) (R (P)))]
       :SKP  [[:R (P)]                       #(inc16 (R (P)))]
       :BNZ  [[:R (P) :lo]                   #(short-branch page-address (not= (D) 0) (R (P)))]
@@ -161,6 +162,19 @@
       :RLDI [[:R n]                         #(reg16 long-immediate)]
       :STXD [[:mem (int16 (R (X)))]         #(mem-byte (D))
              [:R (X)]                       #(dec16 (R (X)))]
+      :ADC  [[:D]                           #(bit-and 0xff (+ (D) (DF) (mem (R (X)))))
+             [:DF]                          #(if (> (+ (D) (DF) (mem (R (X)))) 0xff) 1 0)]
+      :SDB  [[:D]                           #(bit-and
+                                              0xff
+                                              (- (mem (R (X)))
+                                                 (D)
+                                                 (if (= (DF) 0) 1 0)))
+             [:DF]                          #(if (>= (- (mem (R (X)))
+                                                        (D)
+                                                        (if (= (DF) 0) 1 0))
+                                                     0)
+                                               1
+                                               0)]
       :ADCI [[:D]                           #(bit-and 0xff (+ (D) (DF) immediate))
              [:DF]                          #(if (> (+ (D) (DF) immediate) 0xff) 1 0)]
       :SMBI [[:D]                           #(bit-and

@@ -169,9 +169,11 @@
    ;; 0x71
    ;; 0x72
    ;; 0x73
-    (no-operand-op "STXD" line)
+   (no-operand-op "STXD" line)
    ;; 0x74
+   (no-operand-op "ADC" line)
    ;; 0x75
+   (no-operand-op "SDB" line)
    ;; 0x76
    ;; 0x77
    ;; 0x78
@@ -179,76 +181,77 @@
    ;; 0x7A
    ;; 0x7B
    ;; 0x7C
-    (immediate-op "ADCI" line)
+   (immediate-op "ADCI" line)
    ;; 0x7D
    ;; 0x7E
    ;; 0x7F
-    (immediate-op "SMBI" line)
+   (immediate-op "SMBI" line)
    ;; 0x8N
-    (register-op "GLO" line)
+   (register-op "GLO" line)
    ;; 0x9N
-    (register-op "GHI" line)
+   (register-op "GHI" line)
    ;; 0xAN
-    (register-op "PLO" line)
+   (register-op "PLO" line)
    ;; 0xBN
-    (register-op "PHI" line)
+   (register-op "PHI" line)
    ;; 0xC0
-    (long-branch-op "LBR" line)
+   (long-branch-op "LBR" line)
    ;; 0xC1
    ;; 0xC2
    ;; 0xC3
    ;; 0xC4
-    (no-operand-op "NOP" line)
+   (no-operand-op "NOP" line)
    ;; 0xC5
    ;; 0xC6
-    (no-operand-op "LSNZ" line)
+   (no-operand-op "LSNZ" line)
    ;; 0xC7
    ;; 0xC8
-    (no-operand-op "LSKP" line)
+   (no-operand-op "LSKP" line)
    ;; 0xC9
    ;; 0xCA
-    (long-branch-op "LBNZ" line)
+   (long-branch-op "LBNZ" line)
    ;; 0xCB
    ;; 0xCC
    ;; 0xCD
    ;; 0xCE
-    (no-operand-op "LSZ" line)
+   (no-operand-op "LSZ" line)
    ;; 0xCF
    ;; 0xDN
-    (register-op "SEP" line)
+   (register-op "SEP" line)
    ;; 0xEN
-    (register-op "SEX" line)
+   (register-op "SEX" line)
    ;; 0xF0
    ;; 0xF1
-    (no-operand-op "OR" line)
+   (no-operand-op "OR" line)
    ;; 0xF2
    ;; 0xF3
-    (no-operand-op "XOR" line)
+   (no-operand-op "XOR" line)
    ;; 0xF4
-    (no-operand-op "ADD" line)
+   (no-operand-op "ADD" line)
    ;; 0xF5
-    (no-operand-op "SD" line)
+   (no-operand-op "SD" line)
    ;; 0xF6
-    (no-operand-op "SHR" line)
+   (no-operand-op "SHR" line)
    ;; 0xF7
+   (immediate-op "SM" line)
    ;; 0xF8
-    (immediate-op "LDI" line)
+   (immediate-op "LDI" line)
    ;; 0xF9
-    (immediate-op "ORI" line)
+   (immediate-op "ORI" line)
    ;; 0xFA
-    (immediate-op "ANI" line)
+   (immediate-op "ANI" line)
    ;; 0xFB
-    (immediate-op "XRI" line)
+   (immediate-op "XRI" line)
    ;; 0xFC
-    (immediate-op "ADI" line)
+   (immediate-op "ADI" line)
    ;; 0xFD
    ;; 0xFE
    ;; 0xFF
-    (immediate-op "SMI" line)
+   (immediate-op "SMI" line)
 
    ;; pseudo ops
-    (no-operand-op "PRINTCHAR" line)
-    (no-operand-op "READCHAR" line)))
+   (no-operand-op "PRINTCHAR" line)
+   (no-operand-op "READCHAR" line)))
 
 (defn parse-line
   "Parse a single line of assembly."
