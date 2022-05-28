@@ -101,43 +101,44 @@
 
 (defn- parse-instruction-line [line]
   (or
-    (address-directive line)
-    (byte-directive line)
-    (string-directive line)
-    (empty-line line)
+   (address-directive line)
+   (byte-directive line)
+   (string-directive line)
+   (empty-line line)
    ;; 0x00
-    (no-operand-op "IDLE" line)
+   (no-operand-op "IDLE" line)
    ;; 0x0N
-    (register-op "LDN" line)
+   (register-op "LDN" line)
    ;; 0x1N
-    (register-op "INC" line)
+   (register-op "INC" line)
    ;; 0x2N
-    (register-op "DEC" line)
+   (register-op "DEC" line)
    ;; 0x30
-    (short-branch-op "BR" line)
+   (short-branch-op "BR" line)
    ;; 0x31
    ;; 0x32
-    (short-branch-op "BZ" line)
+   (short-branch-op "BZ" line)
    ;; 0x33
-    (short-branch-op "BDF" line)
+   (short-branch-op "BDF" line)
    ;; 0x34
    ;; 0x35
    ;; 0x36
    ;; 0x37
    ;; 0x38
-    (no-operand-op "SKP" line)
+   (no-operand-op "SKP" line)
    ;; 0x39
    ;; 0x3A
-    (short-branch-op "BNZ" line)
+   (short-branch-op "BNZ" line)
    ;; 0x3B
+   (short-branch-op "BNF" line)
    ;; 0x3C
    ;; 0x3D
    ;; 0x3E
    ;; 0x3F
    ;; 0x4N
-    (register-op "LDA" line)
+   (register-op "LDA" line)
    ;; 0x5N
-    (register-op "STR" line)
+   (register-op "STR" line)
    ;; 0x60
    ;; 0x61
    ;; 0x62
@@ -147,17 +148,17 @@
    ;; 0x66
    ;; 0x67
    ;; 0x68 6N
-    (extended-register-op "RLXA" line)
+   (extended-register-op "RLXA" line)
    ;; 0x68 8N
-    (subroutine-call-op "SCAL" line)
+   (subroutine-call-op "SCAL" line)
    ;; 0x68 9N
-    (extended-register-op "SRET" line)
+   (extended-register-op "SRET" line)
    ;; 0x68 AN
-    (extended-register-op "RSXD" line)
+   (extended-register-op "RSXD" line)
    ;; 0x68 BN
-    (extended-register-op "RNX" line)
+   (extended-register-op "RNX" line)
    ;; 0x68 CN
-    (register-immediate-op "RLDI" line)
+   (register-immediate-op "RLDI" line)
    ;; 0x69
    ;; 0x6A
    ;; 0x6B
@@ -251,7 +252,11 @@
 
    ;; pseudo ops
    (no-operand-op "PRINTCHAR" line)
-   (no-operand-op "READCHAR" line)))
+   (no-operand-op "READCHAR" line)
+
+   ;; fail spectacularily on unknown instruction
+   (throw {:type    :parser-error
+           :message (str "Unknown instruction " line)})))
 
 (defn parse-line
   "Parse a single line of assembly."
