@@ -2023,7 +2023,7 @@ E95E:
 
         DEC E                   ; points to end of digits
 
-E976
+E976:	
         LDN E                   ; copy one digit
         DEC E
         SMI #30
