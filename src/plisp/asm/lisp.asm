@@ -1980,19 +1980,19 @@ E930:
 
 E943:
         GLO B                   ; all characters checked?
-        BZ 5E
+        BZ 60
 
         LDA E
         SMI #30
-        BNF 50                  ; stop if below '0'
+        BNF 52                  ; stop if below '0'
         SMI #0A
-        BDF 50                  ; stop if above '9'
+        BDF 52                  ; stop if above '9'
         DEC B
         BR 43
 
 ;;; Not a number, return to READ
 
-E950:
+E952:
         INC 2
         RLXA F
         RLXA E
@@ -2003,12 +2003,12 @@ E950:
         SRET 4
 
 ;;; Copy number to work area
-E95E:
+E960:
         GHI B
         PLO B
-        BZ 50                   ; if there are no digits, this is not a number
+        BZ 52                   ; if there are no digits, this is not a number
         SMI #06
-        BDF CF                  ; exit if too many digits
+        BDF D1                  ; exit if too many digits
 
         RLDI C #7031            ; points to end of work area
         SEX C
@@ -2023,28 +2023,28 @@ E95E:
 
         DEC E                   ; points to end of digits
 
-E976:	
+E978:	
         LDN E                   ; copy one digit
         DEC E
         SMI #30
         STXD
         DEC B
         GLO B
-        BNZ 76
+        BNZ 78
 
-E97F:
+E981:
         RLDI C #702D            ; start of number work area
         RLDI E #7040            ; initially points to 10000
         SEX E
         RLDI B #0000            ; starting value
 
-E98C:
+E98E:
         LDA C                   ; load a digit
         PLO D
 
-E98E:
+E990:
         GLO D
-        BZ 9B
+        BZ 9D
 
         GLO B                   ; add 16 bit constant corresponding to digit position
         ADD
@@ -2056,20 +2056,20 @@ E98E:
 
         DEC E
         DEC D
-        BR 8E
+        BR 90
 
-E99B:
+E99D:
         GLO C                   ; all digits converted?
         XRI #32
-        BZ A4
+        BZ A6
 
         INC E                   ; next digit position
         INC E
-        BR 8C
+        BR 8E
 
-E9A4:
+E9A6:
         GLO F                   ; was there a leading minus?
-        BNZ B0
+        BNZ B2
 
         GLO B                   ; if there was, complement RB
         XRI #FF
@@ -2078,7 +2078,7 @@ E9A4:
         XRI #FF
         PHI B
         INC B
-E9B0:
+E9B2:
         SEX 2
         SCAL 4 6232             ; allocate new cell, address of last byte in R6
 
@@ -2101,7 +2101,7 @@ E9B0:
         DEC 2
         SRET 4
 
-E9CF:
+E9D1:
         RLXA F
         RLXA E
         RLXA D
