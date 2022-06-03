@@ -429,11 +429,29 @@
   (let [changes
         (run-prog
          ["  LDI #12"
-          "  LBR 2000"
-          "  LDI #34"]
+          "  LBR 2000"]
          {:n 2})]
     (is (= {:D 0x12
             :R {0 {:hi 0x20}}
+            :instruction-count 2}
+           changes))))
+
+(deftest test-lbz
+  (let [changes
+        (run-prog
+         ["  LDI #12"
+          "  LBZ 2000"]
+         {:n 2})]
+    (is (= {:D 0x12
+            :R {0 {:lo 0x05}}
+            :instruction-count 2}
+           changes)))
+  (let [changes
+        (run-prog
+         ["  LDI #00"
+          "  LBZ 2000"]
+         {:n 2})]
+    (is (= {:R {0 {:hi 0x20}}
             :instruction-count 2}
            changes))))
 

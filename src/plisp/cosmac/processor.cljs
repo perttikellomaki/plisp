@@ -192,6 +192,9 @@
       :PLO  [[:R n :lo]                     #(D)]
       :PHI  [[:R n :hi]                     #(D)]
       :LBR  [[:R (P)]                       #(reg16 long-address)]
+      :LBZ  [[:R (P)]                       #(long-branch long-address
+                                                          (= (D) 0)
+                                                          (R (P)))]
       :NOP  []
       :LSNZ [[:R (P)]                       #(if (not= (D) 0)
                                                (inc16 (inc16 (R (P))))

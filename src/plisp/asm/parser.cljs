@@ -199,6 +199,7 @@
    (long-branch-op "LBR" line)
    ;; 0xC1
    ;; 0xC2
+   (long-branch-op "LBZ" line)
    ;; 0xC3
    ;; 0xC4
    (no-operand-op "NOP" line)
