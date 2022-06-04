@@ -72,10 +72,17 @@
     (when op
       {:op (keyword op) :long-address (reader/read-string (str "0x" address)) :bytes 3})))
 
+(defn address-assertion
+  "Parse an address assertion."
+  [line]
+  (let [[_ address] (re-matches #"\s*([0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]):\s*(;.*)*" line)]
+    (when address
+      {:op :address-assertion :address (reader/read-string (str "0x" address))})))
+
 (defn address-directive
   "Parse an address directive."
   [line]
-  (let [[_ address] (re-matches #"\s*([0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]):\s*(;.*)*" line)]
+  (let [[_ address] (re-matches #"\s*([0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])::\s*(;.*)*" line)]
     (when address
       {:op :address :address (reader/read-string (str "0x" address))})))
 
@@ -101,6 +108,7 @@
 
 (defn- parse-instruction-line [line]
   (or
+   (address-assertion line)
    (address-directive line)
    (byte-directive line)
    (string-directive line)

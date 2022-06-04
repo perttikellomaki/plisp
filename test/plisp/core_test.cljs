@@ -45,7 +45,7 @@
         (run-prog
          ["  RLDI 1 #fffe"
           "  LDN 1"
-          "fffe:"
+          "fffe::"
           "  BYTE #12"]
          {:n 2})]
     (is (= {:D 0x12
@@ -185,7 +185,7 @@
         (run-prog
          ["  RLDI 1 #fffe"
           "  LDA 1"
-          "fffe:"
+          "fffe::"
           "  BYTE #12"]
          {:n 2})]
     (is (= {:D 0x12
@@ -198,7 +198,7 @@
          ["  RLDI 1 #fffe"
           "  LDA 1"
           "  LDA 1"
-          "fffe:"
+          "fffe::"
           "  BYTE #12"
           "  BYTE #34"]
          {:n 3})]
@@ -226,7 +226,7 @@
          ["  RLDI 1 #0100"
           "  SEX 1"
           "  RLXA 2"
-          "0100:"
+          "0100::"
           "  BYTE #12"
           "  BYTE #34"]
          {:n 3})]
@@ -245,14 +245,14 @@
           "  SCAL 1 0100"
           "  BYTE #03"
           "  RLDI 5 #0550"
-          "0100:"
+          "0100::"
           "  LDA 1   ; should pick up the #03 at call site"
           "  PHI 3"
           "  SCAL 1 0200"
           "  LDI #30"
           "  PLO 3"
           "  SRET 1"
-          "0200:"
+          "0200::"
           "  RLDI 4 #0440"
           "  SRET 1"]
          {:n 12})]
@@ -502,7 +502,7 @@
          ["  LDI #12"
           "  LBNZ 0100"
           "  LDI #34"
-          "0100:"
+          "0100::"
           "  NOP"]
          {:n 3})]
     (is (= {:D 0x12
@@ -514,7 +514,7 @@
          ["  LDI #00"
           "  LBNZ 0100"
           "  LDI #34"
-          "0100:"
+          "0100::"
           "  NOP"]
          {:n 3})]
     (is (= {:D 0x34
@@ -647,7 +647,7 @@
           "  LDA 1"
           "  ADC"
           "  STR 3"
-          "0100:"
+          "0100::"
           "  BYTE #10"
           "  BYTE #20"
           "  BYTE #30"
@@ -678,7 +678,7 @@
           "  LDA 1"
           "  ADC"
           "  STR 3"
-          "0100:"
+          "0100::"
           "  BYTE #91"
           "  BYTE #20"
           "  BYTE #82"

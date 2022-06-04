@@ -35,7 +35,9 @@
 (defn- format-source-line [[i addr line]]
   ^{:key (str "source-" i)}
   [:tr
-   [:td (str (.toString addr 16))]
+   [:td (if addr
+          (.toString addr 16)
+          "????")]
    [:td (when (= i 0) "=>")]
    [:td line]])
 

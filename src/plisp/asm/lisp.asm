@@ -10,7 +10,7 @@
 
         ;; TYÖSIVU 7000 ->
 
-7000:
+7000::
 ;;; The nine bytes that follow are three long branches in the 1805
 ;;; assembly (opcode 0xC0). The initialization code copies default
 ;;; addresses in place of zeros. I think the rationale was that by
@@ -59,14 +59,14 @@
         BYTE #00
         BYTE #00
 
-7026:
+7026::
         BYTE #01                ; FREE CELLS
         BYTE #00                ; todo: should be set by gc
 7028:
         BYTE #83                ; LAST CELL USED + 04 (SEARCH START)
         BYTE #00                ; todo: should be set by gc
 
-702C:
+702C::
         BYTE #2F                ; READ SPECIAL CHR
 
 ;;; Number work area
@@ -77,7 +77,7 @@
         BYTE #00
         BYTE #00
 
-7040:
+7040::
         BYTE #10                ; 10000
         BYTE #27
         BYTE #E8                ; 1000
@@ -93,7 +93,7 @@
 ;;; There is no surviving documentation, so this is a modern
 ;;; reconstruction.
 
-7100:
+7100::
         BYTE #71                ; 2 1ST BYTES = END OF LIB ADDR
         BYTE #3E
 
@@ -150,7 +150,7 @@
 ;;; There is no surviving documentation, so this is a modern
 ;;; reconstruction.
 
-8000:
+8000::
         BYTE #00                ; CONS
         BYTE #0C                ; 0x000c indicates atom 
         BYTE #80
@@ -258,7 +258,7 @@
 
 ;;; LISP-TULKKI
 
-6000:   
+6000::   
         LDI #60                 ; P=3
         PHI 3
         LDI #07
@@ -410,7 +410,7 @@
         LBR 7003
         
 ;;; GARBACOLL
-6131:
+6131::
         RLDI F #700A            ; RF OS ARGSTACK PAGE
         LDA F
         STR 2
@@ -436,7 +436,7 @@
 
 ;;; NEWNODE
 
-6232:   
+6232::   
         RSXD E                  ; SAVE REGS
         RSXD F
 
@@ -460,7 +460,7 @@
         ;; are the same register. Presumably it works on real hardware,
         ;; and when it works it is an efficient way to follow a chain
         ;; of indirections.
-6253:
+6253::
         SEX 6                   ; HAE SEARCH START
         RLXA 6
 
@@ -572,7 +572,7 @@
 
 ;;; KILLSPACES
 
-62D8:
+62D8::
         LDA F                   ; LUE MERKKI
         BNZ E5                  ; RIVIN LOPPU?
         SCAL 4 7000             ; JOS ON, LUE LISÄÄ
@@ -851,7 +851,7 @@
 
 ;;; PRINTSUB
 
-6442:
+6442::
         GHI 6                   ; T OR NIL
         BNZ 5A                  ; EI -> YLI
 6445:
@@ -878,9 +878,7 @@
         BZ A5
 
         SMI #04                 ; NUMERO ?
-        NOP                     ; original: LBZ
-        NOP
-        NOP
+        LBZ E9E8
 
         SMI #04                 ; TUNNUS ?
         BNZ FB
@@ -1008,7 +1006,7 @@
 
 ;;; EVAL
 
-6511:
+6511::
         GHI 7                   ; TILAA?
         STR 2
         GHI 2
@@ -1167,7 +1165,8 @@
         PHI 8
         RLDI 6 #0000
         SCAL 4 60D1
-        STRING "\r\n"
+        BYTE #0D
+        BYTE #0A
         BYTE #00
         SRET 4
 65ED:
@@ -1286,7 +1285,7 @@
 
 ;;; (CAR X)
 
-6690:
+6690::
         SCAL 4 662F             ; EVALARG
         SCAL 4 6639             ; ATOMTEST
 
@@ -1321,7 +1320,7 @@
 
 ;;; EVALTWO
 
-66C6:
+66C6::
         SCAL 4 662F             ; EVALARG
 
         DEC 7                   ; HAE ARGLIST
@@ -1363,7 +1362,7 @@
 
 ;;; (SET X Y)
 
-6706:
+6706::
         SCAL 4 66C6             ; EVALTWO
 
         SEX D                   ; RD = PAL. ARVO
@@ -1459,7 +1458,7 @@
 
 ;;; (PROGN X Y Z ...)
 
-6776:
+6776::
         RLDI 6 #0000            ; R6 = NIL
 677A:
         DEC 7                   ; ARGS LOPPU
@@ -1478,7 +1477,7 @@
 
 ;;; COPYLIST
 
-6794:
+6794::
         DEC 7
         DEC 7
         SEX 7
@@ -1640,7 +1639,7 @@
 
 ;;; SAVEOLDS
 
-68F9:
+68F9::
         SCAL 4 65FE             ; GETARG
         GHI 6
         LBNZ 6909
@@ -1919,7 +1918,7 @@
 ;;; surviving documentation. It is replaced here with pseudo
 ;;; operations PRINTCHAR and READCHAR.
 
-E72F:
+E72F::
         SRET 4
 E731:
         PRINTCHAR
@@ -1929,7 +1928,7 @@ E731:
 ;;; read buffer in work page. The code here approximates what would
 ;;; have been in the original.
         
-E906:
+E906::
         RLDI F #707F            ; read buffer pointer
         LDI #80
         STR F
@@ -1960,7 +1959,7 @@ E906:
 ;;; String to integer conversion.
 ;;; This approximates what would have been in the original.
 
-E930:
+E930::
         RSXD B
         RSXD C
         RSXD D
@@ -2008,7 +2007,7 @@ E960:
         PLO B
         BZ 52                   ; if there are no digits, this is not a number
         SMI #06
-        BDF D1                  ; exit if too many digits
+        BDF D2                  ; exit if too many digits
 
         RLDI C #7031            ; points to end of work area
         SEX C
@@ -2023,7 +2022,7 @@ E960:
 
         DEC E                   ; points to end of digits
 
-E978:	
+E978:   
         LDN E                   ; copy one digit
         DEC E
         SMI #30
@@ -2044,7 +2043,7 @@ E98E:
 
 E990:
         GLO D
-        BZ 9D
+        BZ 9E
 
         GLO B                   ; add 16 bit constant corresponding to digit position
         ADD
@@ -2058,18 +2057,18 @@ E990:
         DEC D
         BR 90
 
-E99D:
+E99E:
         GLO C                   ; all digits converted?
         XRI #32
-        BZ A6
+        BZ A7
 
         INC E                   ; next digit position
         INC E
         BR 8E
 
-E9A6:
+E9A7:
         GLO F                   ; was there a leading minus?
-        BNZ B2
+        BNZ B3
 
         GLO B                   ; if there was, complement RB
         XRI #FF
@@ -2078,7 +2077,7 @@ E9A6:
         XRI #FF
         PHI B
         INC B
-E9B2:
+E9B3:
         SEX 2
         SCAL 4 6232             ; allocate new cell, address of last byte in R6
 
@@ -2101,7 +2100,7 @@ E9B2:
         DEC 2
         SRET 4
 
-E9D1:
+E9D2:
         RLXA F
         RLXA E
         RLXA D

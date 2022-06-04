@@ -1,4 +1,5 @@
-(ns plisp.asm.memory)
+(ns plisp.asm.memory
+  (:require [plisp.util :as util]))
 
 ;;;
 ;;; Lay out instructions in memory.
@@ -8,7 +9,18 @@
   (assoc debug-info source-line-number address))
 
 (defn- layout-iter [{:keys [address memory debug-info]} {:keys [op] :as instruction}]
-  (cond (= op :address)
+  (cond (= op :address-assertion)
+        (if (= address (:address instruction))
+          {:address    address
+           :memory     memory
+           :debug-info debug-info}
+          (throw {:type    :assembler-error
+                  :message (str "Expected address to be "
+                                (util/hex-word (:address instruction))
+                                " but it was "
+                                (util/hex-word address))}))
+
+        (= op :address)
         {:address    (:address instruction)
          :memory     memory
          :debug-info (add-debug debug-info address instruction)}
