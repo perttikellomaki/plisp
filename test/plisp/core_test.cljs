@@ -122,13 +122,34 @@
             :instruction-count 3}
            changes))))
 
+(deftest test-bnf
+  (let [changes
+        (run-prog
+         ["  LDI #01"
+          "  SMI #01"
+          "  BNF 10"]
+         {:n 3})]
+    (is (= {:R {0 {:lo 0x06}}
+            :DF 1
+            :instruction-count 3}
+           changes)))
+  (let [changes
+        (run-prog
+         ["  LDI #01"
+          "  SMI #02"
+          "  BNF 10"]
+         {:n 3})]
+    (is (= {:D 0xff
+            :R {0 {:lo 0x10}}
+            :instruction-count 3}
+           changes))))
+
 (deftest test-bdf
   (let [changes
         (run-prog
          ["  LDI #01"
           "  SMI #01"
-          "  BDF 10"
-          "  LDI #34"]
+          "  BDF 10"]
          {:n 3})]
     (is (= {:R {0 {:lo 0x10}}
             :DF 1
@@ -138,11 +159,11 @@
         (run-prog
          ["  LDI #01"
           "  SMI #02"
-          "  BDF 10"
-          "  LDI #34"])]
-    (is (= {:D 0x34
-            :R {0 {:lo 0x08}}
-            :instruction-count 4}
+          "  BDF 10"]
+         {:n 3})]
+    (is (= {:D 0xff
+            :R {0 {:lo 0x06}}
+            :instruction-count 3}
            changes))))
 
 (deftest test-skp
