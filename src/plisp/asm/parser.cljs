@@ -185,6 +185,7 @@
    (no-operand-op "SDB" line)
    ;; 0x76
    ;; 0x77
+   (no-operand-op "SMB" line)
    ;; 0x78
    ;; 0x79
    ;; 0x7A
@@ -243,7 +244,7 @@
    ;; 0xF6
    (no-operand-op "SHR" line)
    ;; 0xF7
-   (immediate-op "SM" line)
+   (no-operand-op "SM" line)
    ;; 0xF8
    (immediate-op "LDI" line)
    ;; 0xF9

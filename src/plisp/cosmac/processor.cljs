@@ -175,6 +175,17 @@
                                                      0)
                                                1
                                                0)]
+      :SMB  [[:D]                           #(bit-and
+                                              0xff
+                                              (- (D)
+                                                 (mem (R (X)))
+                                                 (if (= (DF) 0) 1 0)))
+             [:DF]                          #(if (>= (- (D)
+                                                        (mem (R (X)))
+                                                        (if (= (DF) 0) 1 0))
+                                                     0)
+                                               1
+                                               0)]
       :ADCI [[:D]                           #(bit-and 0xff (+ (D) (DF) immediate))
              [:DF]                          #(if (> (+ (D) (DF) immediate) 0xff) 1 0)]
       :SMBI [[:D]                           #(bit-and
@@ -216,6 +227,8 @@
              [:DF]                          #(if (>= (mem (R (X))) (D)) 1 0)]
       :SHR  [[:D]                           #(bit-shift-right (D) 1)
              [:DF]                          #(bit-and 0x01 (D))]
+      :SM   [[:D]                           #(bit-and 0xff (- (D) (mem (R (X)))))
+             [:DF]                          #(if (>= (D) (mem (R (X)))) 1 0)]
       :LDI  [[:D]                           #(the immediate)]
       :ORI  [[:D]                           #(bit-or (D) immediate)]
       :ANI  [[:D]                           #(bit-and (D) immediate)]

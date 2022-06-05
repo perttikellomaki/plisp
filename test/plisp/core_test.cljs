@@ -457,6 +457,55 @@
               :instruction-count 9}
              changes))))
 
+(deftest test-smb
+  (let [changes
+        (run-prog
+         ;; calculate 0x0201 - 0x0405 to R2
+         ["  RLDI 1 #0100"
+          "  SEX 1"
+          "  LDI #01"
+          "  SM"
+          "  INC 1"
+          "  PLO 2"
+          "  LDI #02"
+          "  SMB"
+          "  PHI 2"
+          "0100::"
+          "  BYTE #05"
+          "  BYTE #04"]
+         {:n 9})]
+      (is (= {:D 0xfd
+              :X 1
+              :R {0 {:lo 0x0e}
+                  1 {:hi 0x01 :lo 0x01}
+                  2 {:hi 0xfd :lo 0xfc}}
+              :instruction-count 9}
+             changes)))
+  (let [changes
+        (run-prog
+         ;; calculate 0x0405 - 0x0201 to R2
+         ["  RLDI 1 #0100"
+          "  SEX 1"
+          "  LDI #05"
+          "  SM"
+          "  INC 1"
+          "  PLO 2"
+          "  LDI #04"
+          "  SMB"
+          "  PHI 2"
+          "0100::"
+          "  BYTE #01"
+          "  BYTE #02"]
+         {:n 9})]
+    (is (= {:D 0x02
+              :DF 1
+              :X 1
+              :R {0 {:lo 0x0e}
+                  1 {:hi 0x01 :lo 0x01}
+                  2 {:hi 0x02 :lo 0x04}}
+              :instruction-count 9}
+             changes))))
+
 (deftest test-adci
   (let [changes
         (run-prog
@@ -816,6 +865,37 @@
             :DF 1
             :R {0 {:lo 0x03}}
             :instruction-count 2}
+           changes))))
+
+(deftest test-sm
+  (let [changes
+        (run-prog
+         ["  RLDI 1 #0100"
+          "  SEX 1"
+          "  LDI #35"
+          "  SM"
+          "0100::"
+          "  BYTE #12"]
+         {:n 4})]
+    (is (= {:D 0x23
+            :DF 1
+            :X 1
+            :R {0 {:lo 0x08} 1 {:hi 0x01}}
+            :instruction-count 4}
+           changes)))
+  (let [changes
+        (run-prog
+         ["  RLDI 1 #0100"
+          "  SEX 1"
+          "  LDI #12"
+          "  SM"
+          "0100::"
+          "  BYTE #35"]
+         {:n 4})]
+    (is (= {:D 0xdd
+            :X 1
+            :R {0 {:lo 0x08} 1 {:hi 0x01}}
+            :instruction-count 4}
            changes))))
 
 (deftest test-ldi
