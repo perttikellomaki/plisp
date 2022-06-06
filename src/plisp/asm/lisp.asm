@@ -2112,3 +2112,112 @@ E9D2:
         RLXA 4                  ; return to caller's caller
         DEC 2
         SRET 4
+
+;;; Printing numbers
+;;; This approximates what would have been in the original.
+
+;;; Print a lisp integer pointed to by R6
+;;; Off by one because the caller leaves R6 pointing to
+;;; the integer's #08 tag
+
+E9E8:   
+        SEX 6
+        INC 6
+        RLXA 6
+        SEX 2
+
+;;; Print an integer in R6
+E9ED:   
+        RSXD C
+        RSXD D
+        RSXD E
+        RSXD F
+
+        LDI #00
+        PHI D                   ; RD.1 is zero if positive
+
+
+        GHI 6
+        ANI #80                 ; negative?
+        LBZ EA0A
+
+        LDI #01                 ; RD.1 is one if negative
+        PHI D
+
+        GLO 6                   ; complement R6
+        XRI #FF
+        PLO 6
+        GHI 6
+        XRI #FF
+        PHI 6
+        INC 6
+
+EA0A:   
+        RLDI F #702D            ; start of number work area
+        RLDI E #7040            ; RE initially points to 16 bit number 10000
+        SEX E
+EA13:   
+        LDI #00
+        PLO D
+EA16:   
+        GLO 6                   ; keep subtracting until borrow
+        SM
+        PLO 6
+        INC E
+        GHI 6
+        SMB
+        PHI 6
+        DEC E
+        INC D
+        BDF 16
+
+        DEC D
+        GLO D
+        STR F                   ; store the digit
+        INC F
+
+        GLO 6                   ; add back once
+        ADD
+        PLO 6
+        INC E
+        GHI 6
+        ADC
+        PHI 6
+        
+        INC E                   ; move on to next digit
+        GLO E
+        XRI #4A                 ; all digits converted?
+        BNZ 13
+
+        GHI D                   ; start printing
+        BZ 38
+
+        LDI #2D                 ; leading minus
+        PRINTCHAR
+EA38:   
+        RLDI F #702D            ; start of number work area
+EA3C:
+        GLO F
+        XRI #31                 ; last digit?
+        BZ 47
+        LDN F
+        BNZ 47
+
+        INC F                   ; skip leading zero
+        BR 3C
+EA47:   
+        LDA F                   ; print a digit
+        ADI #30
+        PRINTCHAR
+        GLO F
+        XRI #32
+        BNZ 47
+
+        SEX 2                   ; all done, return
+        INC 2
+        RLXA F
+        RLXA E
+        RLXA D
+        RLXA C
+        DEC 2
+        SRET 4
