@@ -13,7 +13,7 @@
         (if (= address (:address instruction))
           {:address    address
            :memory     memory
-           :debug-info debug-info}
+           :debug-info (add-debug debug-info address instruction)}
           (throw {:type    :assembler-error
                   :message (str "Expected address to be "
                                 (util/hex-word (:address instruction))
